@@ -1,0 +1,8 @@
+name = "mxwatch"
+compatibility_date = "2026-03-04"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[vars]
+NEXT_BUNDLER = "bun"
+NODE_VERSION = "20"
