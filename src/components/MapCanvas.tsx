@@ -137,7 +137,7 @@ export default function MapCanvas() {
                 {!topoData ? (
                     <div className="flex flex-col items-center gap-4 text-[#8b98b8]">
                         <div className="w-12 h-12 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
-                        <span className="text-xs font-mono uppercase tracking-[0.2em]">Cargando Intel...</span>
+                        <span className="text-xs font-mono uppercase tracking-[0.2em]">Cargando Mapa...</span>
                     </div>
                 ) : (
                     <MemoizedMap
