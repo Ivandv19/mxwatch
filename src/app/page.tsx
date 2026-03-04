@@ -29,7 +29,7 @@ export default function Home() {
         <div className="mt-20 w-full max-w-3xl grid grid-cols-2 gap-4 sm:grid-cols-3">
           {[
             { label: "Cárteles mapeados", value: "5" },
-            { label: "Estados cubiertos", value: "18" },
+            { label: "Estados cubiertos", value: "32" },
             { label: "Eventos registrados", value: "0", highlight: false },
           ].map(({ label, value, highlight = true }) => (
             <div
