@@ -1,65 +1,64 @@
-import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="relative w-full flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] px-8 text-center py-20 overflow-hidden">
+      <div className="w-full max-w-6xl mx-auto flex flex-col items-center">
+        {/* Background glow effect */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl aspect-square opacity-[0.03] pointer-events-none rounded-full bg-white blur-3xl z-[-1]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-accent opacity-[0.06] blur-[120px] pointer-events-none rounded-full z-[-1]" />
+
+        {/* Status badge */}
+        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-wide uppercase text-[#8b98b8] shadow-sm backdrop-blur-md">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse shadow-[0_0_8px_var(--accent-glow)]" />
+          Plataforma Beta
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <h1 className="max-w-4xl text-5xl font-extrabold tracking-tight sm:text-6xl text-[#f0f4ff] drop-shadow-sm leading-[1.15]">
+          La seguridad de México, <br className="hidden sm:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#f47e86]">visualizada en detalle</span>
+        </h1>
+
+        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#8b98b8] font-medium">
+          Una herramienta interactiva y transparente para rastrear el control territorial de los cárteles y eventos de seguridad a lo largo de toda la República Mexicana.
+        </p>
+
+
+
+        {/* Grid stats */}
+        <div className="mt-20 w-full max-w-3xl grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {[
+            { label: "Cárteles mapeados", value: "5" },
+            { label: "Estados cubiertos", value: "18" },
+            { label: "Eventos registrados", value: "0", highlight: false },
+          ].map(({ label, value, highlight = true }) => (
+            <div
+              key={label}
+              className={`flex flex-col items-center justify-center gap-1 rounded-2xl border ${highlight ? 'border-white/5 bg-[#0f1520] shadow-sm' : 'border-white/5 bg-[#080c12] opacity-60'} p-6 transition-colors hover:bg-[#1c2636] backdrop-blur-sm`}
+            >
+              <span className="text-3xl font-bold tracking-tight text-[#f0f4ff]">
+                {value}
+              </span>
+              <span className="text-sm font-medium text-[#8b98b8] text-center">
+                {label}
+              </span>
+            </div>
+          ))}
         </div>
-      </main>
+
+        {/* CTA Button */}
+        <div className="mt-20 flex flex-col sm:flex-row gap-4">
+          <Link
+            href="/mapa"
+            className="group relative inline-flex h-12 md:h-14 items-center justify-center rounded-lg bg-accent px-8 text-base font-semibold text-white transition-all hover:bg-accent-hover hover:-translate-y-0.5 shadow-[0_0_30px_-10px_var(--accent-glow)]"
+          >
+            <span>Abrir el mapa interactivo</span>
+            <svg className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
