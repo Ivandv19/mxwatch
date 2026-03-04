@@ -5,4 +5,5 @@ pages_build_output_dir = ".vercel/output/static"
 
 [vars]
 NEXT_BUNDLER = "bun"
-NODE_VERSION = "20"
+NODE_VERSION = "24"
+BUN_VERSION = "1.3.10"
