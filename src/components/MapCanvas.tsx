@@ -151,8 +151,8 @@ export default function MapCanvas() {
                     />
                 )}
 
-                {/* HUD Elements (Bottom Right) */}
-                <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-20">
+                {/* HUD Elements (Dynamic Position) */}
+                <div className="absolute top-20 md:top-auto md:bottom-6 right-4 md:right-6 flex flex-col gap-2 z-20">
                     <button onClick={handleZoomIn} className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#0f1520]/80 backdrop-blur-md border border-white/10 text-[#8b98b8] hover:text-[#f0f4ff] hover:border-white/20 hover:bg-[#1c2636] transition-all shadow-lg cursor-pointer">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -189,7 +189,7 @@ const MemoizedMap = React.memo(({
             <ComposableMap
                 projection="geoMercator"
                 projectionConfig={{
-                    scale: 1400,
+                    scale: typeof window !== 'undefined' && window.innerWidth < 768 ? 900 : 1400,
                     center: [-102.34, 24.01]
                 }}
                 className="w-full h-full"

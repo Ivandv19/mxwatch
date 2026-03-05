@@ -14,7 +14,7 @@ export default function Home() {
           Plataforma Beta
         </div>
 
-        <h1 className="max-w-4xl text-5xl font-extrabold tracking-tight sm:text-6xl text-[#f0f4ff] drop-shadow-sm leading-[1.15]">
+        <h1 className="max-w-4xl text-4xl font-extrabold tracking-tight sm:text-6xl text-[#f0f4ff] drop-shadow-sm leading-[1.15]">
           La seguridad de México, <br className="hidden sm:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#f47e86]">visualizada en detalle</span>
         </h1>

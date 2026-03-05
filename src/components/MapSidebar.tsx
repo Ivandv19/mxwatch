@@ -21,10 +21,10 @@ export default function MapSidebar() {
         : null;
 
     return (
-        <aside className="w-full md:w-[380px] h-full bg-[#0f1520] border-r border-white/10 flex flex-col shrink-0 overflow-hidden z-10 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.5)]">
+        <aside className="w-full h-[40%] md:h-full md:w-[380px] bg-[#0f1520] border-b md:border-b-0 md:border-r border-white/10 flex flex-col shrink-0 overflow-hidden z-10 shadow-[0_4px_24px_-12px_rgba(0,0,0,0.5)] md:shadow-[4px_0_24px_-12px_rgba(0,0,0,0.5)]">
             {/* Cabecera / Buscador */}
-            <div className="p-4 border-b border-white/10 bg-[#080c12]/50 backdrop-blur-md sticky top-0 z-10">
-                <h2 className="text-sm font-bold tracking-widest uppercase text-[#f0f4ff] mb-3">Centro de Análisis</h2>
+            <div className="p-3 md:p-4 border-b border-white/10 bg-[#080c12]/50 backdrop-blur-md sticky top-0 z-10">
+                <h2 className="text-[10px] md:text-sm font-bold tracking-widest uppercase text-[#f0f4ff] mb-2 md:mb-3">Centro de Análisis</h2>
                 <div className="relative">
                     <input
                         type="text"
