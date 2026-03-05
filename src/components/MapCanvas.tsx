@@ -8,7 +8,12 @@ import {
 } from "react-simple-maps";
 import { feature } from "topojson-client";
 import { CARTEL_DATA } from "@/constants/cartelData";
-import { useMapStore } from "@/store/mapStore";
+import {
+    useSearchQuery,
+    useSelectedCartel,
+    useSelectedState,
+    useMapActions
+} from "@/store/mapStore";
 
 const geoUrl = "/maps/mexico.json";
 
@@ -28,7 +33,10 @@ interface TooltipState {
 }
 
 export default function MapCanvas() {
-    const { searchQuery, selectedCartel, selectedState, setSelectedState } = useMapStore();
+    const searchQuery = useSearchQuery();
+    const selectedCartel = useSelectedCartel();
+    const selectedState = useSelectedState();
+    const { setSelectedState } = useMapActions();
     const [position, setPosition] = useState({ coordinates: MEXICO_CENTER, zoom: DEFAULT_ZOOM });
     const [topoData, setTopoData] = useState<any>(null);
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);

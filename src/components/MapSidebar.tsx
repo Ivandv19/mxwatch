@@ -1,7 +1,12 @@
 "use client";
 import React, { useMemo } from "react";
 import { CARTEL_LEGEND, CARTEL_DATA, type CartelInfo } from "@/constants/cartelData";
-import { useMapStore } from "@/store/mapStore";
+import {
+    useSearchQuery,
+    useSelectedCartel,
+    useSelectedState,
+    useMapActions
+} from "@/store/mapStore";
 
 // Precompute state count per cartel (se queda igual, está bien optimizado)
 const stateCountByCartel = Object.values(CARTEL_DATA).reduce<Record<string, number>>(
@@ -42,7 +47,10 @@ const CheckIcon = ({ color }: { color: string }) => (
 );
 
 export default function MapSidebar() {
-    const { searchQuery, setSearchQuery, selectedCartel, toggleCartel, selectedState, setSelectedState } = useMapStore();
+    const searchQuery = useSearchQuery();
+    const selectedCartel = useSelectedCartel();
+    const selectedState = useSelectedState();
+    const { setSearchQuery, toggleCartel, setSelectedState } = useMapActions();
 
     // Usar useMemo para cálculos derivados
     const selectedStateData = useMemo(
