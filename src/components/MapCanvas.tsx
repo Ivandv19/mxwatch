@@ -33,6 +33,12 @@ interface TooltipState {
     y: number;
 }
 
+// Tipos para estados de error
+interface ErrorState {
+    map: string | null;
+    data: string | null;
+}
+
 export default function MapCanvas() {
     const searchQuery = useSearchQuery();
     const selectedCartel = useSelectedCartel();
@@ -42,30 +48,54 @@ export default function MapCanvas() {
     const [position, setPosition] = useState({ coordinates: MEXICO_CENTER, zoom: DEFAULT_ZOOM });
     const [topoData, setTopoData] = useState<any>(null);
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+    const [errors, setErrors] = useState<ErrorState>({ map: null, data: null });
+    const [isLoading, setIsLoading] = useState({ map: true, data: true });
     const mapContainerRef = useRef<HTMLDivElement>(null);
 
-    // Efecto para cargar el mapa y los datos en vivo
+    // -----------------------------------------------------------------------------
+    // MEJORA 1: Manejo de errores visual con AbortController
+    // -----------------------------------------------------------------------------
     useEffect(() => {
+        const controller = new AbortController();
+
         // Cargar TopoJSON
-        fetch(geoUrl)
+        setIsLoading(prev => ({ ...prev, map: true }));
+        fetch(geoUrl, { signal: controller.signal })
             .then((res) => {
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 return res.json();
             })
-            .then((data) => setTopoData(data))
+            .then((data) => {
+                setTopoData(data);
+                setErrors(prev => ({ ...prev, map: null }));
+            })
             .catch((err) => {
-                console.error("Error loading map:", err);
-            });
+                if (err.name !== 'AbortError') {
+                    console.error("Error loading map:", err);
+                    setErrors(prev => ({ ...prev, map: "Failed to load map data" }));
+                }
+            })
+            .finally(() => setIsLoading(prev => ({ ...prev, map: false })));
 
         // Cargar Datos en Vivo desde PostgreSQL
+        setIsLoading(prev => ({ ...prev, data: true }));
         getLiveMapData()
             .then(data => {
                 setLiveStateData(data);
+                setErrors(prev => ({ ...prev, data: null }));
             })
-            .catch(err => console.error("Error fetching live map data:", err));
-    }, []);
+            .catch(err => {
+                console.error("Error fetching live map data:", err);
+                setErrors(prev => ({ ...prev, data: "Failed to load cartel intelligence" }));
+            })
+            .finally(() => setIsLoading(prev => ({ ...prev, data: false })));
 
-    // Manejadores de zoom memoizados
+        return () => controller.abort();
+    }, [setLiveStateData]);
+
+    // -----------------------------------------------------------------------------
+    // MEJORA 2: Keyboard Navigation
+    // -----------------------------------------------------------------------------
     const handleZoomIn = useCallback(() => {
         setPosition((pos) => ({
             ...pos,
@@ -82,8 +112,50 @@ export default function MapCanvas() {
 
     const handleReset = useCallback(() => {
         setPosition({ coordinates: MEXICO_CENTER, zoom: DEFAULT_ZOOM });
-        // No reseteamos el estado seleccionado aquí para permitir que el usuario mantenga el detalle si solo quiere re-centrar
     }, []);
+
+    const handleClearSelection = useCallback(() => {
+        setSelectedState(null);
+    }, [setSelectedState]);
+
+    // Keyboard event handler
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Evitar conflictos con inputs
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+                return;
+            }
+
+            switch (e.key) {
+                case '+':
+                case '=':
+                    e.preventDefault();
+                    handleZoomIn();
+                    break;
+                case '-':
+                case '_':
+                    e.preventDefault();
+                    handleZoomOut();
+                    break;
+                case 'r':
+                case 'R':
+                    e.preventDefault();
+                    handleReset();
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    handleClearSelection();
+                    break;
+                case '0':
+                    e.preventDefault();
+                    handleReset();
+                    break;
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleZoomIn, handleZoomOut, handleReset, handleClearSelection]);
 
     const handleMoveEnd = useCallback((position: any) => {
         setPosition(position);
@@ -108,21 +180,16 @@ export default function MapCanvas() {
             };
         }
 
-        const isCartelMatch = selectedCartel !== null && stateRecord.cartels.some(c => c.slug === selectedCartel || c.id === selectedCartel);
+        const isCartelMatch = selectedCartel !== null && stateRecord.cartels.some((c: any) => c.slug === selectedCartel || c.id === selectedCartel);
         const isDimmed = selectedCartel !== null && !isCartelMatch;
         const isHighlighted = (isSearchHighlighted || isCartelMatch);
 
-        const dominantCartel = stateRecord.cartels.find(c => c.isDominant) || stateRecord.cartels[0];
+        const dominantCartel = stateRecord.cartels.find((c: any) => c.isDominant) || stateRecord.cartels[0];
         const primaryColor = dominantCartel.color;
-        const cartelNames = stateRecord.cartels.map(c => c.name).join(" / ");
+        const cartelNames = stateRecord.cartels.map((c: any) => c.name).join(" / ");
 
         // Caso especial Tamaulipas (bicefalia persistente por ahora)
         if (stateRecord.cartels.length > 1 && stateName === "Tamaulipas") {
-            const colorA = stateRecord.cartels[0].color;
-            const colorB = stateRecord.cartels[1].color;
-
-            // Nota: Los IDs de pattern asumen que definimos los colores correctos en SVG. 
-            // Para ser dinámicos haríamos SVG inline, pero mantendremos tu patrón visual.
             return {
                 fill: isDimmed
                     ? "url(#pattern-tamaulipas-dimmed)"
@@ -172,11 +239,74 @@ export default function MapCanvas() {
         typeof window !== 'undefined' && window.innerWidth < 768 ? 900 : 1400,
         []);
 
+    // Componentes de error y loading
+    const ErrorDisplay = ({ message, type }: { message: string; type: 'map' | 'data' }) => (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2 flex items-center gap-2">
+                <span className="text-red-400 text-sm">⚠️</span>
+                <span className="text-red-400 text-xs font-mono">{message}</span>
+                <button
+                    onClick={() => {
+                        if (type === 'map') {
+                            setErrors(prev => ({ ...prev, map: null }));
+                            // Reintentar carga del mapa
+                            setIsLoading(prev => ({ ...prev, map: true }));
+                            fetch(geoUrl)
+                                .then(res => res.json())
+                                .then(data => setTopoData(data))
+                                .catch(err => setErrors(prev => ({ ...prev, map: "Failed to load map data" })))
+                                .finally(() => setIsLoading(prev => ({ ...prev, map: false })));
+                        } else {
+                            setErrors(prev => ({ ...prev, data: null }));
+                            // Reintentar carga de datos
+                            setIsLoading(prev => ({ ...prev, data: true }));
+                            getLiveMapData()
+                                .then(data => setLiveStateData(data))
+                                .catch(err => setErrors(prev => ({ ...prev, data: "Failed to load cartel intelligence" })))
+                                .finally(() => setIsLoading(prev => ({ ...prev, data: false })));
+                        }
+                    }}
+                    className="text-xs text-red-400/70 hover:text-red-400 ml-2 underline"
+                >
+                    Reintentar
+                </button>
+            </div>
+        </div>
+    );
+
+    const LoadingOverlay = () => (
+        <div className="absolute inset-0 bg-[#080c12]/80 backdrop-blur-sm flex items-center justify-center z-40">
+            <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
+                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#8b98b8]">
+                    Cargando Mapa...
+                </span>
+            </div>
+        </div>
+    );
+
+    const KeyboardShortcutsHint = () => (
+        <div className="absolute bottom-6 left-6 z-30 bg-[#0f1520]/60 backdrop-blur-sm border border-white/5 rounded-lg px-3 py-2 text-[10px] font-mono text-[#5e6c8b] hidden md:block">
+            <div className="flex items-center gap-3">
+                <span>+ / - : Zoom</span>
+                <span>R : Reset</span>
+                <span>ESC : Limpiar</span>
+            </div>
+        </div>
+    );
+
     return (
         <div
             ref={mapContainerRef}
             className="relative flex-1 w-full h-full bg-[#080c12] overflow-hidden cursor-crosshair"
         >
+            {/* Mostrar errores si existen */}
+            {errors.map && <ErrorDisplay message={errors.map} type="map" />}
+            {errors.data && <ErrorDisplay message={errors.data} type="data" />}
+
+            {/* Loading overlay solo si está cargando y no hay errores */}
+            {isLoading.map && !errors.map && <LoadingOverlay />}
+
             <div
                 className="absolute inset-0 flex items-center justify-center bg-[#05080c]"
                 style={{
@@ -205,9 +335,12 @@ export default function MapCanvas() {
                     }}
                 />
 
-                {!topoData ? (
+                {/* Keyboard shortcuts hint */}
+                <KeyboardShortcutsHint />
+
+                {!topoData && !errors.map ? (
                     <LoadingIndicator />
-                ) : (
+                ) : topoData && (
                     <MemoizedMap
                         features={features}
                         position={position}
@@ -305,7 +438,8 @@ const MapControls = React.memo(({
             onClick={onZoomIn}
             disabled={zoom >= MAX_ZOOM}
             className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#0f1520]/80 backdrop-blur-md border border-white/10 text-[#8b98b8] hover:text-[#f0f4ff] hover:border-white/20 hover:bg-[#1c2636] transition-all shadow-lg cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Acercar"
+            aria-label="Acercar (tecla +)"
+            title="Acercar (+)"
         >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -315,7 +449,8 @@ const MapControls = React.memo(({
             onClick={onZoomOut}
             disabled={zoom <= DEFAULT_ZOOM}
             className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#0f1520]/80 backdrop-blur-md border border-white/10 text-[#8b98b8] hover:text-[#f0f4ff] hover:border-white/20 hover:bg-[#1c2636] transition-all shadow-lg cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Alejar"
+            aria-label="Alejar (tecla -)"
+            title="Alejar (-)"
         >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
@@ -324,7 +459,8 @@ const MapControls = React.memo(({
         <button
             onClick={onReset}
             className="mt-1 flex items-center justify-center w-9 h-9 rounded-lg bg-[#0f1520]/80 backdrop-blur-md border border-white/10 text-accent hover:text-accent-hover hover:border-accent hover:bg-accent/10 transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] cursor-pointer"
-            aria-label="Resetear vista"
+            aria-label="Resetear vista (tecla R)"
+            title="Resetear (R)"
         >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
