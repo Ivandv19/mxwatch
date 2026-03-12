@@ -7,7 +7,8 @@ import {
     useLiveStateData,
     useMapActions
 } from "@/store/mapStore";
-import { getStateIntelligence, getAllCartelsBasic, LiveStateIntelligence } from "@/actions/mapData";
+import { getStateIntelligence, getAllCartelsBasic } from "@/actions/mapData";
+import type { LiveStateIntelligence } from "@/types/api.types";
 
 // Componente para el ícono de búsqueda
 const SearchIcon = () => (
@@ -69,7 +70,7 @@ export default function MapSidebar() {
     // Recalcular conteos de presencia basados en los datos del mapa
     const stateCountByCartel = useMemo(() => {
         return liveStateData.reduce<Record<string, number>>((acc, stateInfo) => {
-            stateInfo.cartels.forEach(c => {
+            stateInfo.cartels.forEach((c: any) => {
                 acc[c.slug] = (acc[c.slug] ?? 0) + 1;
                 acc[c.id] = (acc[c.id] ?? 0) + 1; // Mapear ambos por si acaso
             });
