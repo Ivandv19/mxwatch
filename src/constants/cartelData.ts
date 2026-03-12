@@ -1,3 +1,6 @@
+// cartelData.ts
+
+// 1. PRIMERO TUS DATOS IGUALITOS - SIN CAMBIOS
 export const CARTEL_DATA: Record<string, { cartels: string[]; color: string; status?: string }> = {
     // ── CJNG ─────────────────────────────
     "Jalisco": { cartels: ["CJNG"], color: "#e63946", status: "En disputa / Blindaje FIFA" },
@@ -41,6 +44,7 @@ export const CARTEL_DATA: Record<string, { cartels: string[]; color: string; sta
     "México": { cartels: ["Michoacana"], color: "#e67e22", status: "Disputa Valle de México" },
 };
 
+// 2. TUS INTERFACES IGUALITAS - SOLO REORGANIZADAS
 export interface FactionInfo {
     name: string;
     leaders?: string[];
@@ -62,6 +66,7 @@ export interface CartelInfo {
     risk_level_fifa2026?: string;
 }
 
+// 3. TU LEYENDA IGUALITA - SIN CAMBIOS
 export const CARTEL_LEGEND: CartelInfo[] = [
     {
         id: "CJNG",
@@ -121,3 +126,44 @@ export const CARTEL_LEGEND: CartelInfo[] = [
         situation: "Alianza con 'Cárteles Unidos' para expulsar al CJNG de Tierra Caliente aprovechando el vacío de poder."
     }
 ];
+
+// 4. SOLO AGREGUÉ ESTO POR ABAJO - HELPERS ÚTILES (OPCIONALES)
+//    Son funciones que NO modifican tus datos, solo ayudan a leerlos
+
+/**
+ * Helper para obtener color de un estado
+ */
+export function getStateColor(stateName: string): string {
+    return CARTEL_DATA[stateName]?.color || "#4a5568";
+}
+
+/**
+ * Helper para obtener cárteles de un estado
+ */
+export function getStateCartels(stateName: string): string[] {
+    return CARTEL_DATA[stateName]?.cartels || [];
+}
+
+/**
+ * Helper para verificar si un estado tiene múltiples cárteles
+ */
+export function isDisputedState(stateName: string): boolean {
+    return (CARTEL_DATA[stateName]?.cartels?.length || 0) > 1;
+}
+
+/**
+ * Helper para obtener información de un cártel por ID
+ */
+export function getCartelInfo(cartelId: string): CartelInfo | undefined {
+    return CARTEL_LEGEND.find(c => c.id === cartelId);
+}
+
+// 5. EXPORTACIÓN OPCIONAL - Si quieres importar todo junto
+export default {
+    CARTEL_DATA,
+    CARTEL_LEGEND,
+    getStateColor,
+    getStateCartels,
+    isDisputedState,
+    getCartelInfo
+};

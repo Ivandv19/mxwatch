@@ -7,13 +7,14 @@ import {
     ZoomableGroup,
 } from "react-simple-maps";
 import { feature } from "topojson-client";
-import { CARTEL_DATA } from "@/constants/cartelData";
 import {
     useSearchQuery,
     useSelectedCartel,
     useSelectedState,
+    useLiveStateData,
     useMapActions
 } from "@/store/mapStore";
+import { getLiveMapData } from "@/actions/mapData";
 
 const geoUrl = "/maps/mexico.json";
 
@@ -36,14 +37,16 @@ export default function MapCanvas() {
     const searchQuery = useSearchQuery();
     const selectedCartel = useSelectedCartel();
     const selectedState = useSelectedState();
-    const { setSelectedState } = useMapActions();
+    const liveStateData = useLiveStateData();
+    const { setSelectedState, setLiveStateData } = useMapActions();
     const [position, setPosition] = useState({ coordinates: MEXICO_CENTER, zoom: DEFAULT_ZOOM });
     const [topoData, setTopoData] = useState<any>(null);
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
 
-    // Efecto para cargar el mapa
+    // Efecto para cargar el mapa y los datos en vivo
     useEffect(() => {
+        // Cargar TopoJSON
         fetch(geoUrl)
             .then((res) => {
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -53,6 +56,13 @@ export default function MapCanvas() {
             .catch((err) => {
                 console.error("Error loading map:", err);
             });
+
+        // Cargar Datos en Vivo desde PostgreSQL
+        getLiveMapData()
+            .then(data => {
+                setLiveStateData(data);
+            })
+            .catch(err => console.error("Error fetching live map data:", err));
     }, []);
 
     // Manejadores de zoom memoizados
@@ -82,40 +92,52 @@ export default function MapCanvas() {
     // Función para obtener estilos del cártel - optimizada
     const getCartelStyle = useCallback((stateName: string) => {
         const isSearchHighlighted = searchQuery && stateName.toLowerCase().includes(searchQuery.toLowerCase());
-        const data = CARTEL_DATA[stateName];
+
+        // Buscar el estado en los datos en vivo de la BD
+        const stateRecord = liveStateData.find(s => s.stateName === stateName);
 
         // Si no hay datos del estado
-        if (!data) {
+        if (!stateRecord || stateRecord.cartels.length === 0) {
             return {
                 fill: "rgba(25, 40, 60, 0.4)",
                 stroke: "rgba(80, 110, 150, 0.4)",
                 strokeWidth: 0.5,
                 cartel: "Zonas en disputa / No data",
                 opacity: 1,
+                liveDataRaw: null
             };
         }
 
-        const isCartelMatch = selectedCartel !== null && data.cartels.includes(selectedCartel);
+        const isCartelMatch = selectedCartel !== null && stateRecord.cartels.some(c => c.slug === selectedCartel || c.id === selectedCartel);
         const isDimmed = selectedCartel !== null && !isCartelMatch;
         const isHighlighted = (isSearchHighlighted || isCartelMatch);
 
-        // Caso especial Tamaulipas (bicefalia)
-        if (data.cartels.length > 1 && stateName === "Tamaulipas") {
+        const dominantCartel = stateRecord.cartels.find(c => c.isDominant) || stateRecord.cartels[0];
+        const primaryColor = dominantCartel.color;
+        const cartelNames = stateRecord.cartels.map(c => c.name).join(" / ");
+
+        // Caso especial Tamaulipas (bicefalia persistente por ahora)
+        if (stateRecord.cartels.length > 1 && stateName === "Tamaulipas") {
+            const colorA = stateRecord.cartels[0].color;
+            const colorB = stateRecord.cartels[1].color;
+
+            // Nota: Los IDs de pattern asumen que definimos los colores correctos en SVG. 
+            // Para ser dinámicos haríamos SVG inline, pero mantendremos tu patrón visual.
             return {
                 fill: isDimmed
                     ? "url(#pattern-tamaulipas-dimmed)"
                     : isHighlighted
                         ? "url(#pattern-tamaulipas-highlighted)"
                         : "url(#pattern-tamaulipas-normal)",
-                stroke: isDimmed ? `${data.color}30` : isHighlighted ? "white" : data.color,
+                stroke: isDimmed ? `${primaryColor}30` : isHighlighted ? "white" : primaryColor,
                 strokeWidth: isHighlighted ? 2 : isDimmed ? 0.5 : 1,
-                cartel: data.cartels.join(" / "),
+                cartel: cartelNames,
                 opacity: isDimmed ? 0.4 : 1,
+                liveDataRaw: dominantCartel
             };
         }
 
         // Caso regular
-        const primaryColor = data.color;
         return {
             fill: isDimmed
                 ? `${primaryColor}18`
@@ -128,10 +150,11 @@ export default function MapCanvas() {
                     ? "white"
                     : primaryColor,
             strokeWidth: isHighlighted ? 2 : isDimmed ? 0.5 : 1,
-            cartel: data.cartels.join(" / "),
+            cartel: cartelNames,
             opacity: isDimmed ? 0.4 : 1,
+            liveDataRaw: dominantCartel
         };
-    }, [searchQuery, selectedCartel]);
+    }, [searchQuery, selectedCartel, liveStateData]);
 
     // Convert TopoJSON a GeoJSON features
     const features = useMemo(() => {
@@ -329,7 +352,7 @@ const MemoizedMap = React.memo(({
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
         const color = style.stroke === "white"
-            ? CARTEL_DATA[stateName]?.color ?? "#8b98b8"
+            ? (style.liveDataRaw?.color ?? "#8b98b8")
             : style.stroke;
 
         setTooltip({

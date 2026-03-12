@@ -1,25 +1,15 @@
 "use client";
-import React, { useMemo } from "react";
-import { CARTEL_LEGEND, CARTEL_DATA, type CartelInfo } from "@/constants/cartelData";
+import React, { useMemo, useEffect, useState } from "react";
 import {
     useSearchQuery,
     useSelectedCartel,
     useSelectedState,
+    useLiveStateData,
     useMapActions
 } from "@/store/mapStore";
+import { getStateIntelligence, getAllCartelsBasic, LiveStateIntelligence } from "@/actions/mapData";
 
-// Precompute state count per cartel (se queda igual, está bien optimizado)
-const stateCountByCartel = Object.values(CARTEL_DATA).reduce<Record<string, number>>(
-    (acc, { cartels }) => {
-        cartels.forEach((c) => {
-            acc[c] = (acc[c] ?? 0) + 1;
-        });
-        return acc;
-    },
-    {}
-);
-
-// Componente para el ícono de búsqueda (extraído para mejorar legibilidad)
+// Componente para el ícono de búsqueda
 const SearchIcon = () => (
     <svg className="w-4 h-4 text-[#5e6c8b] absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -50,26 +40,46 @@ export default function MapSidebar() {
     const searchQuery = useSearchQuery();
     const selectedCartel = useSelectedCartel();
     const selectedState = useSelectedState();
+    const liveStateData = useLiveStateData();
     const { setSearchQuery, toggleCartel, setSelectedState } = useMapActions();
 
-    // Usar useMemo para cálculos derivados
-    const selectedStateData = useMemo(
-        () => (selectedState ? CARTEL_DATA[selectedState] : null),
-        [selectedState]
-    );
+    // Estado local para los datos en vivo traídos de PostgreSQL
+    const [stateIntelligence, setStateIntelligence] = useState<LiveStateIntelligence | null>(null);
+    const [isLoadingIntelligence, setIsLoadingIntelligence] = useState(false);
+    const [allCartels, setAllCartels] = useState<any[]>([]);
 
-    const selectedCartelsInfo = useMemo(
-        () => selectedStateData
-            ? selectedStateData.cartels
-                .map((id) => CARTEL_LEGEND.find((c) => c.id === id))
-                .filter((c): c is CartelInfo => c !== undefined)
-            : [],
-        [selectedStateData]
-    );
+    // Cargar carteles base para la leyenda
+    useEffect(() => {
+        getAllCartelsBasic().then(setAllCartels);
+    }, []);
+
+    // Cargar inteligencia profunda del estado al seleccionarlo
+    useEffect(() => {
+        if (!selectedState) {
+            setStateIntelligence(null);
+            return;
+        }
+
+        setIsLoadingIntelligence(true);
+        getStateIntelligence(selectedState)
+            .then(data => setStateIntelligence(data))
+            .finally(() => setIsLoadingIntelligence(false));
+    }, [selectedState]);
+
+    // Recalcular conteos de presencia basados en los datos del mapa
+    const stateCountByCartel = useMemo(() => {
+        return liveStateData.reduce<Record<string, number>>((acc, stateInfo) => {
+            stateInfo.cartels.forEach(c => {
+                acc[c.slug] = (acc[c.slug] ?? 0) + 1;
+                acc[c.id] = (acc[c.id] ?? 0) + 1; // Mapear ambos por si acaso
+            });
+            return acc;
+        }, {});
+    }, [liveStateData]);
 
     const primaryColor = useMemo(
-        () => selectedCartelsInfo.length > 0 ? selectedCartelsInfo[0].color : null,
-        [selectedCartelsInfo]
+        () => stateIntelligence && stateIntelligence.cartels.length > 0 ? stateIntelligence.cartels[0].color : null,
+        [stateIntelligence]
     );
 
     return (
@@ -109,21 +119,28 @@ export default function MapSidebar() {
 
                 <div className="p-4 flex flex-col gap-6">
                     {/* Panel de estado seleccionado */}
-                    {selectedState && selectedStateData && (
-                        <SelectedStatePanel
-                            selectedState={selectedState}
-                            selectedStateData={selectedStateData}
-                            selectedCartelsInfo={selectedCartelsInfo}
-                            primaryColor={primaryColor}
-                            onClear={() => setSelectedState(null)}
-                        />
+                    {selectedState && (
+                        isLoadingIntelligence ? (
+                            <div className="rounded-xl border border-white/10 bg-white/5 p-8 flex flex-col items-center justify-center">
+                                <div className="w-8 h-8 border-4 border-accent/20 border-t-accent rounded-full animate-spin mb-4" />
+                                <span className="text-xs text-[#8b98b8] font-mono uppercase tracking-[0.2em]">Infiltrando Base de Datos...</span>
+                            </div>
+                        ) : stateIntelligence ? (
+                            <SelectedStatePanel
+                                selectedState={selectedState}
+                                stateIntelligence={stateIntelligence}
+                                primaryColor={primaryColor}
+                                onClear={() => setSelectedState(null)}
+                            />
+                        ) : null
                     )}
 
                     {/* Stats rápidas */}
-                    <QuickStats stateCount={Object.keys(CARTEL_DATA).length} cartelsCount={CARTEL_LEGEND.length} />
+                    <QuickStats stateCount={liveStateData.length} cartelsCount={allCartels.length} />
 
                     {/* Leyenda de Cárteles */}
                     <CartelLegend
+                        cartels={allCartels}
                         selectedCartel={selectedCartel}
                         onToggleCartel={toggleCartel}
                         stateCountByCartel={stateCountByCartel}
@@ -140,14 +157,12 @@ export default function MapSidebar() {
 // Componente para el panel de estado seleccionado
 const SelectedStatePanel = React.memo(({
     selectedState,
-    selectedStateData,
-    selectedCartelsInfo,
+    stateIntelligence,
     primaryColor,
     onClear
 }: {
     selectedState: string;
-    selectedStateData: typeof CARTEL_DATA[string];
-    selectedCartelsInfo: CartelInfo[];
+    stateIntelligence: LiveStateIntelligence;
     primaryColor: string | null;
     onClear: () => void;
 }) => (
@@ -173,22 +188,20 @@ const SelectedStatePanel = React.memo(({
         <span className="text-base font-bold text-[#f0f4ff]">{selectedState}</span>
 
         <div className="flex flex-col gap-6">
-            {selectedCartelsInfo.length > 1 && selectedStateData.status && (
+            {stateIntelligence.cartels.length > 1 && (
                 <div className="bg-orange-500/10 border border-orange-500/20 p-2 rounded-lg text-center shadow-inner">
                     <span className="text-xs font-bold text-orange-400 capitalize tracking-wide">
-                        {selectedStateData.status}
+                        Zona de Riesgo / Disputa
                     </span>
                 </div>
             )}
 
-            {selectedCartelsInfo.map((cartelInfo, idx) => (
+            {stateIntelligence.cartels.map((cartelInfo: any, idx) => (
                 <CartelDetail
                     key={cartelInfo.id}
-                    cartelInfo={cartelInfo}
+                    cartel={cartelInfo}
                     index={idx}
-                    totalCartels={selectedCartelsInfo.length}
-                    stateStatus={selectedStateData?.status}
-                    isDisputed={selectedCartelsInfo.length > 1}
+                    isDisputed={stateIntelligence.cartels.length > 1}
                 />
             ))}
         </div>
@@ -197,18 +210,14 @@ const SelectedStatePanel = React.memo(({
 
 SelectedStatePanel.displayName = 'SelectedStatePanel';
 
-// Componente para el detalle de un cártel
+// Componente para el detalle de un cártel usando Live Data
 const CartelDetail = React.memo(({
-    cartelInfo,
+    cartel,
     index,
-    totalCartels,
-    stateStatus,
     isDisputed
 }: {
-    cartelInfo: CartelInfo;
+    cartel: any;
     index: number;
-    totalCartels: number;
-    stateStatus?: string;
     isDisputed: boolean;
 }) => (
     <div className={`flex flex-col gap-3 ${index > 0 ? "pt-6 border-t border-white/10 relative" : ""}`}>
@@ -221,10 +230,10 @@ const CartelDetail = React.memo(({
         <div className="flex items-center gap-2">
             <div
                 className="w-3 h-3 rounded-sm flex-shrink-0"
-                style={{ backgroundColor: cartelInfo.color }}
+                style={{ backgroundColor: cartel.color }}
             />
-            <span className="text-sm font-medium pr-2" style={{ color: cartelInfo.color }}>
-                {cartelInfo.name}
+            <span className="text-sm font-medium pr-2" style={{ color: cartel.color }}>
+                {cartel.name}
             </span>
         </div>
 
@@ -232,62 +241,34 @@ const CartelDetail = React.memo(({
             {/* Status Badge */}
             <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[10px] font-black uppercase tracking-tighter bg-accent/20 text-accent px-2 py-0.5 rounded border border-accent/30">
-                    {isDisputed ? "Operación Conjunta/Disputa" : (stateStatus || cartelInfo.status)}
+                    {cartel.localIntelligenceNote || cartel.globalStatus || (isDisputed ? "Operación Conjunta/Disputa" : "Presencia")}
                 </span>
-                {cartelInfo.foreign_designation && (
+                {cartel.foreignDesignation && (
                     <span className="text-[9px] font-black uppercase tracking-tighter bg-red-900/30 text-red-400 px-2 py-0.5 rounded border border-red-500/30">
-                        {cartelInfo.foreign_designation}
+                        {cartel.foreignDesignation}
                     </span>
                 )}
             </div>
 
-            {/* Sección: Liderazgo y Unidades */}
-            {((cartelInfo.leaders && cartelInfo.leaders.length > 0) || (cartelInfo.units && cartelInfo.units.length > 0)) && (
-                <div className="grid grid-cols-2 gap-4">
-                    {cartelInfo.leaders && cartelInfo.leaders.length > 0 && (
-                        <div className="flex flex-col gap-1">
-                            <span className="text-[9px] uppercase tracking-widest text-[#5e6c8b] font-bold">
-                                Liderazgo Estratégico
+            {/* Sección: Liderazgo */}
+            {cartel.leaders && cartel.leaders.length > 0 && (
+                <div className="flex flex-col gap-1">
+                    <span className="text-[9px] uppercase tracking-widest text-[#5e6c8b] font-bold">
+                        Liderazgo Detectado en la Región
+                    </span>
+                    <div className="flex flex-col gap-0.5">
+                        {cartel.leaders.map((leader: any, i: number) => (
+                            <span key={i} className="text-xs text-[#f0f4ff] font-medium leading-tight">
+                                {leader.name} {leader.alias ? `("${leader.alias}")` : ''}
                             </span>
-                            <div className="flex flex-col gap-0.5">
-                                {cartelInfo.leaders.map((leader, i) => (
-                                    <span key={i} className="text-xs text-[#f0f4ff] font-medium leading-tight">
-                                        {leader}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    {cartelInfo.units && cartelInfo.units.length > 0 && (
-                        <div className="flex flex-col gap-1">
-                            <span className="text-[9px] uppercase tracking-widest text-[#5e6c8b] font-bold">
-                                Brazos Armados
-                            </span>
-                            <div className="flex flex-col gap-0.5">
-                                {cartelInfo.units.map((unit, i) => (
-                                    <span key={i} className="text-xs text-[#8b98b8] font-medium leading-tight">
-                                        {unit}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                        ))}
+                    </div>
                 </div>
             )}
 
             {/* Sección: Facciones */}
-            {cartelInfo.factions && cartelInfo.factions.length > 0 && (
-                <FactionsSection factions={cartelInfo.factions} />
-            )}
-
-            {/* Impacto Estratégico */}
-            {(cartelInfo.economic_impact || cartelInfo.risk_level_fifa2026) && (
-                <StrategicImpact cartelInfo={cartelInfo} />
-            )}
-
-            {/* Situación Táctica */}
-            {cartelInfo.situation && (
-                <TacticalSituation situation={cartelInfo.situation} />
+            {cartel.factions && cartel.factions.length > 0 && (
+                <FactionsSection factions={cartel.factions} />
             )}
         </div>
     </div>
@@ -296,10 +277,10 @@ const CartelDetail = React.memo(({
 CartelDetail.displayName = 'CartelDetail';
 
 // Componente para la sección de facciones
-const FactionsSection = React.memo(({ factions }: { factions: NonNullable<CartelInfo['factions']> }) => (
+const FactionsSection = React.memo(({ factions }: { factions: any[] }) => (
     <div className="flex flex-col gap-2 p-3 rounded-lg bg-white/5 border border-white/10">
         <span className="text-[9px] uppercase tracking-widest text-[#5e6c8b] font-bold">
-            Desglose de Facciones internas
+            Facciones y Brazos Armados operando
         </span>
         <div className="flex flex-col gap-3">
             {factions.map((faction, i) => (
@@ -313,20 +294,6 @@ const FactionsSection = React.memo(({ factions }: { factions: NonNullable<Cartel
                             </span>
                         )}
                     </div>
-                    {faction.leaders && faction.leaders.length > 0 && (
-                        <span className="text-[10px] text-[#8b98b8] pl-3.5 italic">
-                            Líder: {faction.leaders.join(", ")}
-                        </span>
-                    )}
-                    {faction.units && faction.units.length > 0 && (
-                        <div className="flex flex-wrap gap-1 pl-3.5 mt-0.5">
-                            {faction.units.map((u, j) => (
-                                <span key={j} className="text-[9px] bg-white/10 text-[#f0f4ff] px-1.5 py-0.5 rounded">
-                                    {u}
-                                </span>
-                            ))}
-                        </div>
-                    )}
                 </div>
             ))}
         </div>
@@ -334,48 +301,6 @@ const FactionsSection = React.memo(({ factions }: { factions: NonNullable<Cartel
 ));
 
 FactionsSection.displayName = 'FactionsSection';
-
-// Componente para el impacto estratégico
-const StrategicImpact = React.memo(({ cartelInfo }: { cartelInfo: CartelInfo }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1 pt-4 border-t border-white/10">
-        {cartelInfo.risk_level_fifa2026 && (
-            <div className="flex flex-col gap-1">
-                <span className="text-[9px] uppercase tracking-widest text-[#5e6c8b] font-bold">
-                    Riesgo Mundial FIFA 26
-                </span>
-                <span className="text-[10px] font-bold text-[#f0f4ff] bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 rounded w-fit">
-                    {cartelInfo.risk_level_fifa2026}
-                </span>
-            </div>
-        )}
-        {cartelInfo.economic_impact && (
-            <div className="flex flex-col gap-1">
-                <span className="text-[9px] uppercase tracking-widest text-[#5e6c8b] font-bold">
-                    Impacto Económico
-                </span>
-                <span className="text-[11px] text-[#8b98b8] leading-tight">
-                    {cartelInfo.economic_impact}
-                </span>
-            </div>
-        )}
-    </div>
-));
-
-StrategicImpact.displayName = 'StrategicImpact';
-
-// Componente para la situación táctica
-const TacticalSituation = React.memo(({ situation }: { situation: string }) => (
-    <div className="flex flex-col gap-1.5 mt-1 pt-4 border-t border-white/10">
-        <span className="text-[9px] uppercase tracking-widest text-[#5e6c8b] font-bold">
-            Resumen de Inteligencia
-        </span>
-        <p className="text-xs text-[#8b98b8] leading-relaxed italic bg-black/20 p-2 rounded-md border-l-2 border-accent/50">
-            "{situation}"
-        </p>
-    </div>
-));
-
-TacticalSituation.displayName = 'TacticalSituation';
 
 // Componente para stats rápidas
 const QuickStats = React.memo(({ stateCount, cartelsCount }: { stateCount: number, cartelsCount: number }) => (
@@ -388,7 +313,7 @@ const QuickStats = React.memo(({ stateCount, cartelsCount }: { stateCount: numbe
         </div>
         <div className="bg-[#161d2b] border border-white/5 rounded-lg p-3 flex flex-col py-4">
             <span className="text-[10px] uppercase tracking-widest text-[#5e6c8b] font-bold mb-1">
-                Estados
+                Estados Documentados
             </span>
             <span className="text-2xl font-black text-[#f0f4ff]">{stateCount}</span>
         </div>
@@ -399,10 +324,12 @@ QuickStats.displayName = 'QuickStats';
 
 // Componente para la leyenda de cárteles
 const CartelLegend = React.memo(({
+    cartels,
     selectedCartel,
     onToggleCartel,
     stateCountByCartel
 }: {
+    cartels: any[];
     selectedCartel: string | null;
     onToggleCartel: (id: string) => void;
     stateCountByCartel: Record<string, number>;
@@ -420,15 +347,16 @@ const CartelLegend = React.memo(({
             )}
         </h3>
         <div className="flex flex-col gap-1.5">
-            {CARTEL_LEGEND.map((c) => {
-                const isSelected = selectedCartel === c.id;
+            {cartels.map((c) => {
+                // Checamos por ID o por Slug por si acaso
+                const isSelected = selectedCartel === c.id || selectedCartel === c.slug;
                 const isDimmed = selectedCartel !== null && !isSelected;
-                const count = stateCountByCartel[c.id] ?? 0;
+                const count = (stateCountByCartel[c.slug] ?? 0) || (stateCountByCartel[c.id] ?? 0);
 
                 return (
                     <button
                         key={c.id}
-                        onClick={() => onToggleCartel(c.id)}
+                        onClick={() => onToggleCartel(c.slug || c.id)}
                         className={`flex items-center gap-3 p-2 rounded-md transition-all text-left w-full group
                             ${isSelected ? "bg-[#1c2636] shadow-sm" : "hover:bg-[#161d2b]"}
                             ${isDimmed ? "opacity-30" : "opacity-100"}
@@ -469,14 +397,14 @@ CartelLegend.displayName = 'CartelLegend';
 const SidebarFooter = React.memo(() => (
     <div className="p-4 border-t border-white/5 mt-auto flex flex-col items-center gap-2">
         <span className="text-[10px] uppercase tracking-widest text-[#5e6c8b] font-medium">
-            Última actualización: 4 de marzo del 2026
+            Última actualización: Inteligencia en Vivo
         </span>
         <div className="flex flex-col items-center gap-1 opacity-50">
             <span
                 className="text-[12px] text-[#5e6c8b] uppercase tracking-widest text-center"
                 style={{ transform: 'scale(0.65)', display: 'block' }}
             >
-                Powered by Gemini Deep Research
+                Powered by PostgreSQL x Drizzle
             </span>
         </div>
     </div>

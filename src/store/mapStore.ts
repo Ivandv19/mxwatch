@@ -1,17 +1,20 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { LiveStatePresence } from "@/actions/mapData";
 
 interface MapState {
     // State
     searchQuery: string;
     selectedCartel: string | null;
     selectedState: string | null;
+    liveStateData: LiveStatePresence[];
 
     // Actions
     setSearchQuery: (query: string) => void;
     setSelectedCartel: (id: string | null) => void;
     toggleCartel: (id: string) => void;
     setSelectedState: (name: string | null) => void;
+    setLiveStateData: (data: LiveStatePresence[]) => void;
 
     // Computed / Helpers (opcional)
     resetAll: () => void;
@@ -24,8 +27,12 @@ export const useMapStore = create<MapState>()(
             searchQuery: "",
             selectedCartel: null,
             selectedState: null,
+            liveStateData: [],
 
             // Actions
+            setLiveStateData: (data) =>
+                set({ liveStateData: data }, false, "map/setLiveStateData"),
+
             setSearchQuery: (query) =>
                 set({ searchQuery: query }, false, "map/setSearchQuery"),
 
@@ -61,6 +68,7 @@ export const useMapStore = create<MapState>()(
 export const useSearchQuery = () => useMapStore((state) => state.searchQuery);
 export const useSelectedCartel = () => useMapStore((state) => state.selectedCartel);
 export const useSelectedState = () => useMapStore((state) => state.selectedState);
+export const useLiveStateData = () => useMapStore((state) => state.liveStateData);
 
 // Acciones individuales para evitar recrear objetos innecesarios
 export const useMapActions = () => {
@@ -68,6 +76,7 @@ export const useMapActions = () => {
     const setSelectedCartel = useMapStore((state) => state.setSelectedCartel);
     const toggleCartel = useMapStore((state) => state.toggleCartel);
     const setSelectedState = useMapStore((state) => state.setSelectedState);
+    const setLiveStateData = useMapStore((state) => state.setLiveStateData);
     const resetAll = useMapStore((state) => state.resetAll);
 
     return {
@@ -75,6 +84,7 @@ export const useMapActions = () => {
         setSelectedCartel,
         toggleCartel,
         setSelectedState,
+        setLiveStateData,
         resetAll,
     };
 };
