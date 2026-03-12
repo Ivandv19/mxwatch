@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { LiveStatePresence } from "@/actions/mapData";
+import type { LiveStatePresence } from "@/types/api.types";
 
 interface MapState {
     // State
