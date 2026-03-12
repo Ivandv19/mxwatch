@@ -3,7 +3,6 @@
  * Cliente API (Hono RPC)
  * Conecta el frontend con mxwatch-api para consumo tipado (E2E) de datos.
  */
-'use server'; // <- Directiva de Next.js: Indica que estas funciones SOLO se ejecutan en el servidor de Node.js, nunca en el navegador web del usuario.
 
 import { hc } from 'hono/client';
 // @ts-ignore: Importamos los tipos inferidos desde el backend hermano (mxwatch-api)
