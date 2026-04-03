@@ -5,6 +5,7 @@ import MapCanvas from "@/components/MapCanvas";
 // Forzamos el renderizado dinámico para que Cloudflare permita peticiones POST 
 // (necesarias para las Server Actions) hacia esta ruta.
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 /**
  * Página principal del Mapa Interactivo.
