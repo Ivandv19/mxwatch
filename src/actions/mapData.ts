@@ -9,11 +9,14 @@ import type {
   LiveStateIntelligence,
 } from "../types/api.types";
 
-// URL base de la API (fuerza /api, nunca ruta de UI como /mapa)
+// URL base de la aplicación (limpia cualquier sufijo /api para evitar el doble prefijo /api/api)
 const API_BASE = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 ).replace(/\/+$/, "");
-const API_URL = API_BASE.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
+
+// El cliente de Hono añade automáticamente los prefijos definidos en app.route('/api', api)
+// Por lo tanto, la base para hc debe ser la raíz del servidor.
+const API_URL = API_BASE.replace(/\/api$/, "");
 
 // Instancia RPC con la API Key configurada globalmente
 const client: any = hc<AppType>(API_URL, {
