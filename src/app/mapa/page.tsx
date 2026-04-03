@@ -2,6 +2,10 @@ import { Suspense } from "react";
 import MapSidebar from "@/components/MapSidebar";
 import MapCanvas from "@/components/MapCanvas";
 
+// Forzamos el renderizado dinámico para que Cloudflare permita peticiones POST 
+// (necesarias para las Server Actions) hacia esta ruta.
+export const dynamic = "force-dynamic";
+
 /**
  * Página principal del Mapa Interactivo.
  * Renderiza el lienzo del mapa y la barra lateral de inteligencia técnica.
