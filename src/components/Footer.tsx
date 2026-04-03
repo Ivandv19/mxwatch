@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// Enlaces estáticos del pie de página
 const FOOTER_LINKS = [
     {
         heading: "Plataforma",
@@ -13,19 +14,24 @@ const FOOTER_LINKS = [
     },
 ];
 
+/**
+ * Pie de página global.
+ * Se oculta en la vista del mapa interactivo para optimizar el espacio de pantalla.
+ */
 export default function Footer() {
     const pathname = usePathname();
 
+    // No mostrar Footer en la vista del mapa interactivo
     if (pathname === "/mapa") return null;
 
     return (
         <footer className="w-full border-t border-white/10 bg-[#080c12] mt-auto">
             <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-16">
 
-                {/* Main grid: brand (2 cols) + 1 nav group = 3 total */}
+                {/* Grid principal: Logotipo (2 columnas) + Menú Navegación (1 columna) */}
                 <div className="grid grid-cols-2 gap-x-8 gap-y-12 md:grid-cols-3">
 
-                    {/* Brand — spans 2 columns */}
+                    {/* Branding y descripción */}
                     <div className="col-span-2 flex flex-col gap-5">
                         <Link href="/" className="flex items-center gap-3 select-none w-fit group">
                             <span className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold bg-accent text-white shadow-[0_0_15px_rgba(230,57,70,0.3)] group-hover:scale-110 transition-transform">
@@ -47,7 +53,7 @@ export default function Footer() {
                         </div>
                     </div>
 
-                    {/* Nav columns — 1 col each */}
+                    {/* Listado dinámico de navegación */}
                     {FOOTER_LINKS.map(({ heading, links }) => (
                         <div key={heading} className="flex flex-col gap-5">
                             <h3 className="font-bold text-[#f0f4ff] uppercase tracking-wider text-xs">
@@ -69,7 +75,7 @@ export default function Footer() {
                     ))}
                 </div>
 
-                {/* Bottom bar */}
+                {/* Barra inferior de Copyright y Tecnologías */}
                 <div className="mt-16 pt-8 border-t border-white/10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-[#8b98b8]">
                         © {new Date().getFullYear()} <span className="font-bold text-[#f0f4ff]">mxwatch</span> — Proyecto independiente con fines informativos.

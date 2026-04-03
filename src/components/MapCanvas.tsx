@@ -16,49 +16,69 @@ import {
 } from "@/store/mapStore";
 import { getLiveMapData } from "@/actions/mapData";
 
+/**
+ * URL del recurso TopoJSON con los límites geográficos de México.
+ */
 const geoUrl = "/maps/mexico.json";
 
-// Constantes para mejorar mantenibilidad
-const MEXICO_CENTER: [number, number] = [-102.34, 24.01];
-const DEFAULT_ZOOM = 1;
-const MAX_ZOOM = 8;
-const ZOOM_STEP = 1.5;
+/**
+ * Constantes de Configuración del Mapa
+ */
+const MEXICO_CENTER: [number, number] = [-102.34, 24.01]; // Centro geográfico aproximado
+const DEFAULT_ZOOM = 1;      // Nivel de zoom inicial
+const MAX_ZOOM = 8;         // Límite máximo de acercamiento
+const ZOOM_STEP = 1.5;      // Factor de incremento en zoom
 
-// Interfaz para el tooltip
+/**
+ * Estado interno para el Tooltip estratégico.
+ */
 interface TooltipState {
-    content: string;
-    cartel: string;
-    color: string;
-    x: number;
-    y: number;
+    content: string; // Nombre del estado
+    cartel: string;  // Nombres de los cárteles presentes
+    color: string;   // Color representativo
+    x: number;       // Posición X en pixeles
+    y: number;       // Posición Y en pixeles
 }
 
-// Tipos para estados de error
+/**
+ * Estados de Error para el seguimiento de fallos en carga.
+ */
 interface ErrorState {
-    map: string | null;
-    data: string | null;
+    map: string | null;  // Error al cargar TopoJSON
+    data: string | null; // Error al cargar inteligencia de la BD
 }
 
+/**
+ * Componente MapCanvas: El núcleo interactivo de la plataforma.
+ * Renderiza el mapa de México, maneja zoom, tooltips y la visualización 
+ * dinámica del control territorial (inteligencia en vivo).
+ */
 export default function MapCanvas() {
+    // --- Hooks de Estado Global (Zustand) ---
     const searchQuery = useSearchQuery();
     const selectedCartel = useSelectedCartel();
     const selectedState = useSelectedState();
     const liveStateData = useLiveStateData();
     const { setSelectedState, setLiveStateData } = useMapActions();
+
+    // --- Hooks de Estado Local ---
     const [position, setPosition] = useState({ coordinates: MEXICO_CENTER, zoom: DEFAULT_ZOOM });
     const [topoData, setTopoData] = useState<any>(null);
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
     const [errors, setErrors] = useState<ErrorState>({ map: null, data: null });
     const [isLoading, setIsLoading] = useState({ map: true, data: true });
+    
+    // Referencia al contenedor para cálculos de coordenadas locales
     const mapContainerRef = useRef<HTMLDivElement>(null);
 
-    // -----------------------------------------------------------------------------
-    // MEJORA 1: Manejo de errores visual con AbortController
-    // -----------------------------------------------------------------------------
+    /**
+     * EFECTO: Carga de Datos y Geografía
+     * Implementa AbortController para evitar fugas de memoria en desmontaje.
+     */
     useEffect(() => {
         const controller = new AbortController();
 
-        // Cargar TopoJSON
+        // 1. Cargar Geometría del Mapa (TopoJSON)
         setIsLoading(prev => ({ ...prev, map: true }));
         fetch(geoUrl, { signal: controller.signal })
             .then((res) => {
@@ -72,12 +92,12 @@ export default function MapCanvas() {
             .catch((err) => {
                 if (err.name !== 'AbortError') {
                     console.error("Error loading map:", err);
-                    setErrors(prev => ({ ...prev, map: "Failed to load map data" }));
+                    setErrors(prev => ({ ...prev, map: "Error al cargar geometría" }));
                 }
             })
             .finally(() => setIsLoading(prev => ({ ...prev, map: false })));
 
-        // Cargar Datos en Vivo desde PostgreSQL
+        // 2. Cargar Inteligencia en Vivo (Server Action -> PostgreSQL)
         setIsLoading(prev => ({ ...prev, data: true }));
         getLiveMapData()
             .then(data => {
@@ -86,16 +106,16 @@ export default function MapCanvas() {
             })
             .catch(err => {
                 console.error("Error fetching live map data:", err);
-                setErrors(prev => ({ ...prev, data: "Failed to load cartel intelligence" }));
+                setErrors(prev => ({ ...prev, data: "Error al cargar inteligencia" }));
             })
             .finally(() => setIsLoading(prev => ({ ...prev, data: false })));
 
         return () => controller.abort();
     }, [setLiveStateData]);
 
-    // -----------------------------------------------------------------------------
-    // MEJORA 2: Keyboard Navigation
-    // -----------------------------------------------------------------------------
+    /**
+     * Handlers de Control de Vista (Zoom y Reset)
+     */
     const handleZoomIn = useCallback(() => {
         setPosition((pos) => ({
             ...pos,
@@ -118,10 +138,12 @@ export default function MapCanvas() {
         setSelectedState(null);
     }, [setSelectedState]);
 
-    // Keyboard event handler
+    /**
+     * EFECTO: Atajos de Teclado (Navegación Táctica)
+     */
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Evitar conflictos con inputs
+            // No activar atajos si el usuario está escribiendo en un input
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
                 return;
             }
@@ -161,14 +183,17 @@ export default function MapCanvas() {
         setPosition(position);
     }, []);
 
-    // Función para obtener estilos del cártel - optimizada
+    /**
+     * Lógica de Estilizado Dinámico de Carteles.
+     * Calcula colores, grosores y patrones según filtros de búsqueda y selección.
+     */
     const getCartelStyle = useCallback((stateName: string) => {
         const isSearchHighlighted = searchQuery && stateName.toLowerCase().includes(searchQuery.toLowerCase());
 
-        // Buscar el estado en los datos en vivo de la BD
+        // Cruzar con datos locales de la BD
         const stateRecord = liveStateData.find(s => s.stateName === stateName);
 
-        // Si no hay datos del estado
+        // Caso: Estado sin datos registrados o en disputa total
         if (!stateRecord || stateRecord.cartels.length === 0) {
             return {
                 fill: "rgba(25, 40, 60, 0.4)",
@@ -188,7 +213,7 @@ export default function MapCanvas() {
         const primaryColor = dominantCartel.color;
         const cartelNames = stateRecord.cartels.map((c: any) => c.name).join(" / ");
 
-        // Caso especial Tamaulipas (bicefalia persistente por ahora)
+        // Caso Especial: Tamaulipas (Renderizado con patrones de bicefalia)
         if (stateRecord.cartels.length > 1 && stateName === "Tamaulipas") {
             return {
                 fill: isDimmed
@@ -204,7 +229,7 @@ export default function MapCanvas() {
             };
         }
 
-        // Caso regular
+        // Estilo Estándar basado en Cartel Dominante
         return {
             fill: isDimmed
                 ? `${primaryColor}18`
@@ -223,7 +248,9 @@ export default function MapCanvas() {
         };
     }, [searchQuery, selectedCartel, liveStateData]);
 
-    // Convert TopoJSON a GeoJSON features
+    /**
+     * Memorizar features de TopoJSON para evitar re-calculo constante.
+     */
     const features = useMemo(() => {
         if (!topoData?.objects?.states) return [];
         try {
@@ -234,12 +261,15 @@ export default function MapCanvas() {
         }
     }, [topoData]);
 
-    // Escala del mapa responsive
+    /**
+     * Ajuste de escala según dispositivo.
+     */
     const mapScale = useMemo(() =>
         typeof window !== 'undefined' && window.innerWidth < 768 ? 900 : 1400,
         []);
 
-    // Componentes de error y loading
+    // --- Sub-componentes de Estado Táctico ---
+
     const ErrorDisplay = ({ message, type }: { message: string; type: 'map' | 'data' }) => (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
             <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2 flex items-center gap-2">
@@ -249,20 +279,15 @@ export default function MapCanvas() {
                     onClick={() => {
                         if (type === 'map') {
                             setErrors(prev => ({ ...prev, map: null }));
-                            // Reintentar carga del mapa
                             setIsLoading(prev => ({ ...prev, map: true }));
-                            fetch(geoUrl)
-                                .then(res => res.json())
-                                .then(data => setTopoData(data))
-                                .catch(err => setErrors(prev => ({ ...prev, map: "Failed to load map data" })))
+                            fetch(geoUrl).then(res => res.json()).then(data => setTopoData(data))
+                                .catch(() => setErrors(prev => ({ ...prev, map: "Error al reintentar" })))
                                 .finally(() => setIsLoading(prev => ({ ...prev, map: false })));
                         } else {
                             setErrors(prev => ({ ...prev, data: null }));
-                            // Reintentar carga de datos
                             setIsLoading(prev => ({ ...prev, data: true }));
-                            getLiveMapData()
-                                .then(data => setLiveStateData(data))
-                                .catch(err => setErrors(prev => ({ ...prev, data: "Failed to load cartel intelligence" })))
+                            getLiveMapData().then(data => setLiveStateData(data))
+                                .catch(() => setErrors(prev => ({ ...prev, data: "Error al reintentar" })))
                                 .finally(() => setIsLoading(prev => ({ ...prev, data: false })));
                         }
                     }}
@@ -279,7 +304,7 @@ export default function MapCanvas() {
             <div className="flex flex-col items-center gap-4">
                 <div className="w-12 h-12 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
                 <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#8b98b8]">
-                    Cargando Mapa...
+                    Sincronizando Inteligencia...
                 </span>
             </div>
         </div>
@@ -300,11 +325,9 @@ export default function MapCanvas() {
             ref={mapContainerRef}
             className="relative flex-1 w-full h-full bg-[#080c12] overflow-hidden cursor-crosshair"
         >
-            {/* Mostrar errores si existen */}
+            {/* HUD: Errores y Estados de Carga */}
             {errors.map && <ErrorDisplay message={errors.map} type="map" />}
             {errors.data && <ErrorDisplay message={errors.data} type="data" />}
-
-            {/* Loading overlay solo si está cargando y no hay errores */}
             {isLoading.map && !errors.map && <LoadingOverlay />}
 
             <div
@@ -318,12 +341,12 @@ export default function MapCanvas() {
                     backgroundPosition: "center center",
                 }}
             >
-                {/* Tooltip táctico */}
+                {/* Visualización de Tooltip */}
                 {tooltip && (
                     <StrategicTooltip tooltip={tooltip} />
                 )}
 
-                {/* Graticule/Grid simulation */}
+                {/* Rejilla de Referencia Táctica */}
                 <div
                     className="absolute inset-0 opacity-[0.03]"
                     style={{
@@ -335,7 +358,6 @@ export default function MapCanvas() {
                     }}
                 />
 
-                {/* Keyboard shortcuts hint */}
                 <KeyboardShortcutsHint />
 
                 {!topoData && !errors.map ? (
@@ -354,7 +376,7 @@ export default function MapCanvas() {
                     />
                 )}
 
-                {/* HUD Elements - Controles de mapa */}
+                {/* Controles de HUD Flotantes */}
                 <MapControls
                     onZoomIn={handleZoomIn}
                     onZoomOut={handleZoomOut}
@@ -366,7 +388,9 @@ export default function MapCanvas() {
     );
 }
 
-// Componente de tooltip separado para mejor rendimiento
+/**
+ * StrategicTooltip: Componente memoizado para renderizar detalles al vuelo.
+ */
 const StrategicTooltip = React.memo(({ tooltip }: { tooltip: TooltipState }) => (
     <div
         className="absolute z-50 pointer-events-none transition-transform duration-75 ease-out"
@@ -409,7 +433,9 @@ const StrategicTooltip = React.memo(({ tooltip }: { tooltip: TooltipState }) => 
 
 StrategicTooltip.displayName = 'StrategicTooltip';
 
-// Indicador de carga
+/**
+ * LoadingIndicator: Spinner táctico central.
+ */
 const LoadingIndicator = React.memo(() => (
     <div className="flex flex-col items-center gap-4 text-[#8b98b8]">
         <div className="w-12 h-12 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
@@ -421,7 +447,9 @@ const LoadingIndicator = React.memo(() => (
 
 LoadingIndicator.displayName = 'LoadingIndicator';
 
-// Controles del mapa
+/**
+ * MapControls: Botonera de control de cámara.
+ */
 const MapControls = React.memo(({
     onZoomIn,
     onZoomOut,
@@ -471,7 +499,10 @@ const MapControls = React.memo(({
 
 MapControls.displayName = 'MapControls';
 
-// Componente del mapa memoizado
+/**
+ * MemoizedMap: El renderizador SVG del mapa. 
+ * Memoizado para evitar ruidos de re-render al mover el mouse sobre el contenedor.
+ */
 const MemoizedMap = React.memo(({
     features,
     position,
@@ -518,6 +549,7 @@ const MemoizedMap = React.memo(({
                 }}
                 className="w-full h-full"
             >
+                {/* Definiciones de patrones para bicefalia territorial */}
                 <defs>
                     <pattern id="pattern-tamaulipas-normal" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
                         <rect width="6" height="12" fill="#9b59b6" fillOpacity={0.4} />
@@ -532,6 +564,7 @@ const MemoizedMap = React.memo(({
                         <rect x="6" width="6" height="12" fill="#1abc9c" fillOpacity={0.15} />
                     </pattern>
                 </defs>
+                
                 <ZoomableGroup
                     zoom={position.zoom}
                     center={position.coordinates}
@@ -585,6 +618,7 @@ const MemoizedMap = React.memo(({
         </div>
     );
 }, (prevProps, nextProps) => {
+    // Optimización: Solo re-renderizar si cambian propiedades críticas de la vista
     return (
         prevProps.features === nextProps.features &&
         prevProps.position.zoom === nextProps.position.zoom &&

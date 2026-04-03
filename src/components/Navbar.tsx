@@ -1,7 +1,10 @@
 import Link from "next/link";
 
+/**
+ * Barra de navegación principal.
+ * Contiene el logotipo y el acceso a la página de inicio.
+ */
 export default function Navbar() {
-
     return (
         <header className="fixed top-0 left-0 right-0 z-50 h-[64px] border-b border-white/10 bg-[#080c12]/60 backdrop-blur-md">
             <nav className="w-full max-w-6xl mx-auto h-full px-4 sm:px-6 flex items-center justify-center">
@@ -10,6 +13,7 @@ export default function Navbar() {
                     className="flex items-center gap-3 select-none transition-opacity hover:opacity-90"
                     aria-label="mxwatch home"
                 >
+                    {/* Logotipo táctico MX */}
                     <span className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold bg-accent text-white shadow-[0_0_15px_rgba(230,57,70,0.3)]">
                         MX
                     </span>

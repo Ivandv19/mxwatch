@@ -1,6 +1,11 @@
+/**
+ * Componente de marcador de posición para secciones aún no desarrolladas.
+ * Presenta un mensaje amigable indicando que la sección está en construcción.
+ */
 export default function PlaceholderPage({ title }: { title: string }) {
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+            {/* Aviso visual de estado */}
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-wide uppercase text-accent shadow-sm backdrop-blur-md">
                 En Construcción
             </div>
