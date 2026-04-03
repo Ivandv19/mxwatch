@@ -1,23 +1,21 @@
-
-/**
- * Cliente API (Hono RPC)
- * Conecta el frontend con mxwatch-api para consumo tipado (E2E) de datos.
- */
+'use server';
 
 import { hc } from 'hono/client';
 // @ts-ignore: Importamos los tipos inferidos desde el backend hermano (mxwatch-api)
 import type { AppType } from '../../../mxwatch-api/src/index';
 import type { LiveStatePresence, LiveCartelDetails, LiveStateIntelligence } from '../types/api.types';
 
+// URL base de la API (limpia el prefijo si existe)
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787/api').replace('/api', '');
 
-// Instancia RPC casteada a 'any' temporalmente para sortear reglas estrictas cross-repo de Next.js
-const client: any = hc<AppType>(API_URL);
+// Instancia RPC con la API Key configurada globalmente
+const client: any = hc<AppType>(API_URL, {
+    headers: {
+        'x-api-key': process.env.API_KEY || ''
+    }
+});
 
-// -----------------------------------------------------------------------------
-// UTILIDAD DE TIMEOUT
-// Evita que el frontend de Next.js se quede colgado si la VPS tarda en responder
-// -----------------------------------------------------------------------------
+// Envuelve una promesa en un timeout para evitar peticiones colgadas
 async function fetchWithTimeout<T>(promise: Promise<T>, timeoutMs = 8000): Promise<T> {
     let timeoutId: NodeJS.Timeout;
     const timeoutPromise = new Promise<never>((_, reject) => {
@@ -27,30 +25,17 @@ async function fetchWithTimeout<T>(promise: Promise<T>, timeoutMs = 8000): Promi
     return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId!));
 }
 
-
-
-// -----------------------------------------------------------------------------
-// FUNCIONES DE FETCHING AL BACKEND (Server Actions de Next.js)
-// 
-// IMPORTANTE: ¿Son Server Actions o simples fetchs?
-// Son AMBAS cosas. 
-// 1. Son "Simples fetchs" porque detrás de escena usan el cliente de Hono (hono/client) 
-//    para hacer una petición HTTP GET convencional hacia nuestro backend remoto (localhost:8787).
-// 2. Son "Server Actions" de Next.js porque tienen la directiva 'use server' arriba. 
-//    Esto significa que si un componente de React llama a `getLiveMapData()`, Next.js intercepta esa
-//    llamada, la resuelve en tu propio servidor intermedio (Next Server) y le devuelve solo 
-//    el resultado limpio al navegador del cliente web, escondiendo la URL de Hono.
-// -----------------------------------------------------------------------------
+// --- ACCIONES DE FETCHING (Server Actions) ---
 
 export async function getLiveMapData(): Promise<LiveStatePresence[]> {
     try {
-        const res = await fetchWithTimeout<any>(client.api.map.$get());
+        const res = await fetchWithTimeout<any>(client.api.map.$get()); // Petición GET al mapa
         if (!res.ok) throw new Error('Failed to fetch map data');
 
-        const json = await res.json();
-        return json.data as LiveStatePresence[];
+        const json = await res.json(); // Parsea la respuesta JSON
+        return json.data as LiveStatePresence[]; // Retorna los datos tipados de presencia
     } catch (error) {
-        console.error("Error obteniendo datos del mapa en vivo desde Hono:", error);
+        console.error("Error [getLiveMapData]:", error);
         return [];
     }
 }
@@ -58,31 +43,31 @@ export async function getLiveMapData(): Promise<LiveStatePresence[]> {
 export async function getCartelDetails(cartelSlug: string): Promise<LiveCartelDetails | null> {
     try {
         const res = await fetchWithTimeout<any>(client.api.cartel[':slug'].$get({
-            param: { slug: cartelSlug }
+            param: { slug: cartelSlug } // Petición usando el slug como parámetro
         }));
 
         if (!res.ok) {
-            if (res.status === 404) return null;
+            if (res.status === 404) return null; // Retorna null si no existe
             throw new Error('Failed to fetch cartel details');
         }
 
-        const json = await res.json();
-        return json.data as LiveCartelDetails;
+        const json = await res.json(); // Parsea la respuesta JSON
+        return json.data as LiveCartelDetails; // Retorna detalles completos del cártel
     } catch (error) {
-        console.error("Error obteniendo detalles del cártel desde Hono:", error);
+        console.error("Error [getCartelDetails]:", error);
         return null;
     }
 }
 
 export async function getAllCartelsBasic() {
     try {
-        const res = await fetchWithTimeout<any>(client.api.cartels.$get());
+        const res = await fetchWithTimeout<any>(client.api.cartels.$get()); // Lista de todos los cárteles
         if (!res.ok) throw new Error('Failed to fetch cartels');
 
-        const json = await res.json();
-        return json.data;
+        const json = await res.json(); // Parsea la respuesta JSON
+        return json.data; // Retorna nombres, slugs y colores básicos
     } catch (error) {
-        console.error("Error obteniendo lista de cárteles desde Hono:", error);
+        console.error("Error [getAllCartelsBasic]:", error);
         return [];
     }
 }
@@ -90,7 +75,7 @@ export async function getAllCartelsBasic() {
 export async function getStateIntelligence(stateName: string): Promise<LiveStateIntelligence | null> {
     try {
         const res = await fetchWithTimeout<any>(client.api.state[':name'].$get({
-            param: { name: stateName }
+            param: { name: stateName } // Consulta inteligencia por nombre de estado
         }));
 
         if (!res.ok) {
@@ -98,11 +83,10 @@ export async function getStateIntelligence(stateName: string): Promise<LiveState
             throw new Error('Failed to fetch state intelligence');
         }
 
-        const json = await res.json();
-        return json.data as LiveStateIntelligence;
+        const json = await res.json(); // Parsea la respuesta JSON
+        return json.data as LiveStateIntelligence; // Retorna presencias, líderes y notas tácticas
     } catch (error) {
-        console.error("Error fetching state intelligence desde Hono:", error);
+        console.error("Error [getStateIntelligence]:", error);
         return null;
     }
 }
-
