@@ -1,19 +1,25 @@
 import Link from "next/link";
 
+/**
+ * Página de Inicio de mxwatch.
+ * Presenta la propuesta de valor y estadísticas clave de la plataforma.
+ * Actúa como punto de entrada hacia el mapa interactivo.
+ */
 export default function Home() {
   return (
     <div className="relative w-full flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] px-8 text-center py-20 overflow-hidden">
       <div className="w-full max-w-6xl mx-auto flex flex-col items-center">
-        {/* Background glow effect */}
+        {/* Efectos de iluminación de fondo (Glow) */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl aspect-square opacity-[0.03] pointer-events-none rounded-full bg-white blur-3xl z-[-1]" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-accent opacity-[0.06] blur-[120px] pointer-events-none rounded-full z-[-1]" />
 
-        {/* Status badge */}
+        {/* Badge de estado de la plataforma */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-wide uppercase text-[#8b98b8] shadow-sm backdrop-blur-md">
           <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse shadow-[0_0_8px_var(--accent-glow)]" />
           Plataforma Beta
         </div>
 
+        {/* Encabezado principal con gradiente de acento */}
         <h1 className="max-w-4xl text-4xl font-extrabold tracking-tight sm:text-6xl text-[#f0f4ff] drop-shadow-sm leading-[1.15]">
           La seguridad de México, <br className="hidden sm:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-[#f47e86]">visualizada en detalle</span>
@@ -23,9 +29,7 @@ export default function Home() {
           Una herramienta interactiva y transparente para rastrear el control territorial de los cárteles y eventos de seguridad a lo largo de toda la República Mexicana.
         </p>
 
-
-
-        {/* Grid stats */}
+        {/* Rejilla de estadísticas rápidas (KPIs) */}
         <div className="mt-20 w-full max-w-3xl grid grid-cols-2 gap-4 sm:grid-cols-3">
           {[
             { label: "Cárteles mapeados", value: "5" },
@@ -46,7 +50,7 @@ export default function Home() {
           ))}
         </div>
 
-        {/* CTA Button */}
+        {/* Botón de Llamada a la Acción (CTA) */}
         <div className="mt-20 flex flex-col sm:flex-row gap-4">
           <Link
             href="/mapa"

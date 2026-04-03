@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Script from "next/script";
 
+// Configuración de tipografías de Google Fonts
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -17,6 +18,10 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+/**
+ * Metadatos globales y SEO de la plataforma.
+ * Incluye configuraciones para OpenGraph (Redes Sociales) y Twitter Cards.
+ */
 export const metadata: Metadata = {
   title: "mxwatch — Mapa de seguridad en México",
   description:
@@ -29,7 +34,7 @@ export const metadata: Metadata = {
     siteName: "mxwatch",
     images: [
       {
-        url: "/og-image.png", // Ensure this exists or we can generate one
+        url: "/og-image.png",
         width: 1200,
         height: 630,
       },
@@ -45,11 +50,16 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Layout principal de la aplicación.
+ * Define la estructura base (HTML, Head, Body, Navbar, Footer).
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Datos Estructurados (JSON-LD) para mejorar el SEO en buscadores
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -65,6 +75,7 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <head>
+        {/* Inyección de JSON-LD y Analytics (Umami) */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -79,6 +90,7 @@ export default function RootLayout({
         className={`${inter.variable} ${geistMono.variable} antialiased flex flex-col min-h-dvh`}
       >
         <Navbar />
+        {/* Contenido principal de las páginas con padding para el Navbar fijo */}
         <main className="flex-1 w-full pt-[64px]">{children}</main>
         <Footer />
       </body>
