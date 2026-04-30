@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   description:
     "Plataforma interactiva para visualizar el control territorial de carteles y eventos de seguridad en toda la República Mexicana.",
   keywords: ["México", "seguridad", "carteles", "mapa", "crimen organizado", "visualización territorial"],
+  icons: {
+    icon: "/favicon.png",
+  },
   openGraph: {
     title: "mxwatch",
     description: "Mapa interactivo de seguridad en México",

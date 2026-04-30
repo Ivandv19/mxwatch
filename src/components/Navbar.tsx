@@ -13,10 +13,11 @@ export default function Navbar() {
                     className="flex items-center gap-3 select-none transition-opacity hover:opacity-90"
                     aria-label="mxwatch home"
                 >
-                    {/* Logotipo táctico MX */}
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold bg-accent text-white shadow-[0_0_15px_rgba(230,57,70,0.3)]">
-                        MX
-                    </span>
+                    <img
+                        src="/logo.png"
+                        alt="MxWatch Logo"
+                        className="w-8 h-8 rounded-lg shadow-[0_0_15px_rgba(230,57,70,0.3)]"
+                    />
                     <div className="flex flex-col leading-none">
                         <span className="text-lg font-bold tracking-tight text-[#f0f4ff]">
                             mxwatch
