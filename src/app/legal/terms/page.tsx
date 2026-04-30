@@ -1,16 +1,24 @@
 import type { Metadata } from "next";
 
+/**
+ * Metadatos SEO para la página legal de términos.
+ */
 export const metadata: Metadata = {
     title: "Términos y Condiciones — mxwatch",
     description: "Términos y condiciones de uso de la plataforma mxwatch.",
 };
 
+/**
+ * Página estática de Términos y Condiciones.
+ * Define las reglas de uso, propiedad intelectual y limitaciones de responsabilidad.
+ */
 export default function TermsPage() {
     return (
         <article className="max-w-3xl mx-auto px-4 py-20 text-[#8b98b8] leading-relaxed">
             <h1 className="text-3xl font-bold text-[#f0f4ff] mb-2">Términos y Condiciones</h1>
             <p className="text-sm text-accent font-medium mb-12 uppercase tracking-widest">Última actualización: 30 de abril de 2026</p>
 
+            {/* Sección 1: Aceptación del contrato de usuario */}
             <section className="mb-10">
                 <h2 className="text-xl font-bold text-[#f0f4ff] mb-4">1. Aceptación de los Términos</h2>
                 <p>
@@ -18,6 +26,7 @@ export default function TermsPage() {
                 </p>
             </section>
 
+            {/* Sección 2: Derechos de autor y licencias */}
             <section className="mb-10">
                 <h2 className="text-xl font-bold text-[#f0f4ff] mb-4">2. Propiedad Intelectual</h2>
                 <p>
@@ -25,6 +34,7 @@ export default function TermsPage() {
                 </p>
             </section>
 
+            {/* Sección 3: Disclaimer sobre la naturaleza de los datos */}
             <section className="mb-10">
                 <h2 className="text-xl font-bold text-[#f0f4ff] mb-4">3. Naturaleza de la Información</h2>
                 <p>
@@ -32,6 +42,7 @@ export default function TermsPage() {
                 </p>
             </section>
 
+            {/* Sección 4: Exención de responsabilidad legal */}
             <section className="mb-10">
                 <h2 className="text-xl font-bold text-[#f0f4ff] mb-4">4. Limitación de Responsabilidad</h2>
                 <p>
@@ -39,6 +50,7 @@ export default function TermsPage() {
                 </p>
             </section>
 
+            {/* Sección 5: Política de actualizaciones del documento */}
             <section className="mb-10">
                 <h2 className="text-xl font-bold text-[#f0f4ff] mb-4">5. Modificaciones</h2>
                 <p>

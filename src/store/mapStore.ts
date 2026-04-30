@@ -1,22 +1,25 @@
+/**
+ * Store de Zustand para gestión de estado interactivo del mapa.
+ * Maneja selección de entidades, búsqueda y datos de presencia territorial.
+ */
+
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import type { LiveStatePresence } from "@/types/api.types";
 
 interface MapState {
-    // State
+    // Estado
     searchQuery: string;
     selectedCartel: string | null;
     selectedState: string | null;
     liveStateData: LiveStatePresence[];
 
-    // Actions
+    // Acciones
     setSearchQuery: (query: string) => void;
     setSelectedCartel: (id: string | null) => void;
     toggleCartel: (id: string) => void;
     setSelectedState: (name: string | null) => void;
     setLiveStateData: (data: LiveStatePresence[]) => void;
-
-    // Computed / Helpers (opcional)
     resetAll: () => void;
 }
 
@@ -29,7 +32,7 @@ export const useMapStore = create<MapState>()(
             selectedState: null,
             liveStateData: [],
 
-            // Actions
+            // Acciones
             setLiveStateData: (data) =>
                 set({ liveStateData: data }, false, "map/setLiveStateData"),
 
@@ -49,7 +52,6 @@ export const useMapStore = create<MapState>()(
             setSelectedState: (name) =>
                 set({ selectedState: name }, false, "map/setSelectedState"),
 
-            // Helper útil - resetea todo
             resetAll: () =>
                 set({
                     searchQuery: "",
@@ -58,19 +60,19 @@ export const useMapStore = create<MapState>()(
                 }, false, "map/resetAll"),
         }),
         {
-            name: "MapStore", // Nombre para las devtools
-            enabled: process.env.NODE_ENV === 'development' // Solo en desarrollo
+            name: "MapStore",
+            enabled: process.env.NODE_ENV === 'development'
         }
     )
 );
 
-// Selectores optimizados
+// Selectores optimizados para evitar re-renders innecesarios
 export const useSearchQuery = () => useMapStore((state) => state.searchQuery);
 export const useSelectedCartel = () => useMapStore((state) => state.selectedCartel);
 export const useSelectedState = () => useMapStore((state) => state.selectedState);
 export const useLiveStateData = () => useMapStore((state) => state.liveStateData);
 
-// Acciones individuales para evitar recrear objetos innecesarios
+// Hook personalizado para acciones con igualdad referencial estable
 export const useMapActions = () => {
     const setSearchQuery = useMapStore((state) => state.setSearchQuery);
     const setSelectedCartel = useMapStore((state) => state.setSelectedCartel);

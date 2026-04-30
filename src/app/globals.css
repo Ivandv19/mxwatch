@@ -1,37 +1,43 @@
 @import "tailwindcss";
 
-/* ── Design Tokens ─────────────────────────────────── */
+/* ── Design Tokens: Paleta de colores y variables del sistema ── */
 :root {
-  /* Hex base colors */
+  /* Fondos y Superficies */
   --bg-dark: #080c12;
   --bg-card: #0f1520;
   --bg-input: #161d2b;
 
+  /* Bordes y Separadores */
   --border-dim: rgba(255, 255, 255, 0.05);
   --border-light: rgba(255, 255, 255, 0.1);
   --border-mid: rgba(255, 255, 255, 0.2);
 
+  /* Tipografía */
   --text-main: #f0f4ff;
   --text-dim: #8b98b8;
   --text-muted: #5e6c8b;
 
+  /* Acento (Rojo Táctico) y Efectos */
   --accent: #e63946;
   --accent-hover: #d5303c;
   --accent-glow: rgba(230, 57, 70, 0.35);
 
+  /* Dimensiones de Layout */
   --navbar-h: 64px;
 }
 
+/* Integración de tokens con el tema de Tailwind CSS v4 */
 @theme inline {
   --color-accent: var(--accent);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
 
-/* ── Base reset ────────────────────────────────────── */
+/* ── Reset y Estilos Base ── */
 @layer base {
   html {
     color-scheme: dark;
+    /* Fuerza modo oscuro nativo en UI del navegador */
     scroll-behavior: smooth;
   }
 
@@ -40,6 +46,7 @@
     color: var(--text-main);
     font-family: var(--font-inter), system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    /* Renderizado de fuente nítido en macOS */
     -moz-osx-font-smoothing: grayscale;
     min-height: 100dvh;
     display: flex;
@@ -47,7 +54,7 @@
   }
 }
 
-/* ── Scrollbar ─────────────────────────────────────── */
+/* ── Personalización de Scrollbar ── */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -66,7 +73,9 @@
   background: var(--text-muted);
 }
 
-/* ── Utility classes ───────────────────────────────── */
+/* ── Utilidades Personalizadas ── */
+
+/* Efecto Glassmorphism para paneles flotantes */
 .glass {
   background: rgba(8, 12, 18, 0.85);
   backdrop-filter: blur(12px);
@@ -74,6 +83,7 @@
   border: 1px solid var(--border-light);
 }
 
+/* Indicador visual de estado activo (punto brillante) */
 .accent-dot::before {
   content: "";
   display: inline-block;

@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Script from "next/script";
 
-// Configuración de tipografías de Google Fonts
+// Configuración de tipografías optimizadas con Google Fonts
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -19,29 +19,19 @@ const geistMono = Geist_Mono({
 });
 
 /**
- * Metadatos globales y SEO de la plataforma.
- * Incluye configuraciones para OpenGraph (Redes Sociales) y Twitter Cards.
+ * Metadatos globales para SEO, OpenGraph y Twitter Cards.
  */
 export const metadata: Metadata = {
   title: "mxwatch — Mapa de seguridad en México",
-  description:
-    "Plataforma interactiva para visualizar el control territorial de carteles y eventos de seguridad en toda la República Mexicana.",
+  description: "Plataforma interactiva para visualizar el control territorial de carteles y eventos de seguridad en toda la República Mexicana.",
   keywords: ["México", "seguridad", "carteles", "mapa", "crimen organizado", "visualización territorial"],
-  icons: {
-    icon: "/favicon.png",
-  },
+  icons: { icon: "/favicon.png" },
   openGraph: {
     title: "mxwatch",
     description: "Mapa interactivo de seguridad en México",
     url: "https://mxwatch.mgdc.site",
     siteName: "mxwatch",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-      },
-    ],
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
     locale: "es_MX",
     type: "website",
   },
@@ -54,15 +44,12 @@ export const metadata: Metadata = {
 };
 
 /**
- * Layout principal de la aplicación.
- * Define la estructura base (HTML, Head, Body, Navbar, Footer).
+ * Layout raíz de la aplicación: estructura HTML, fuentes, SEO técnico y componentes persistentes.
  */
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  // Datos Estructurados (JSON-LD) para mejorar el SEO en buscadores
+}: Readonly<{ children: React.ReactNode }>) {
+  // Datos Estructurados (JSON-LD) para rich snippets en buscadores
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -78,22 +65,15 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <head>
-        {/* Inyección de JSON-LD y Analytics (Umami) */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-        <Script
-          src="https://umami.fluxdv.icu/script.js"
-          data-website-id="7d9d6a44-ae40-4784-894d-0509fda3ac05"
-          strategy="afterInteractive"
-        />
+        {/* Inyección de Schema.org para SEO semántico */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
+        {/* Analytics respetuoso con la privacidad (Umami) */}
+        <Script src="https://umami.fluxdv.icu/script.js" data-website-id="7d9d6a44-ae40-4784-894d-0509fda3ac05" strategy="afterInteractive" />
       </head>
-      <body
-        className={`${inter.variable} ${geistMono.variable} antialiased flex flex-col min-h-dvh`}
-      >
+      <body className={`${inter.variable} ${geistMono.variable} antialiased flex flex-col min-h-dvh`}>
         <Navbar />
-        {/* Contenido principal de las páginas con padding para el Navbar fijo */}
+        {/* Contenedor principal con offset para navbar fijo */}
         <main className="flex-1 w-full pt-[64px]">{children}</main>
         <Footer />
       </body>

@@ -1,44 +1,61 @@
-# Security Headers - Aplicados a todas las rutas
+# Configuración de headers HTTP para despliegue en Cloudflare Pages.
+# Define políticas de seguridad estrictas y estrategias de caché por tipo de recurso.
+
+# ─────────────────────────────────────────────────────────────
+# SECURITY HEADERS - Aplicados globalmente a todas las rutas (*)
+# ─────────────────────────────────────────────────────────────
 /*
-  # Previene clickjacking
+  # Previene clickjacking: bloquea embebido en iframes externos
   X-Frame-Options: DENY
   
-  # Previene MIME-sniffing
+  # Previene MIME-sniffing: fuerza al navegador a respetar el Content-Type declarado
   X-Content-Type-Options: nosniff
   
-  # Protección XSS para navegadores legacy
+  # Protección XSS básica para navegadores legacy (obsoleto en Chromium, mantener por compatibilidad)
   X-XSS-Protection: 1; mode=block
   
-  # Control de referrer
+  # Control de referrer: envía origen solo en mismas condiciones de seguridad (HTTPS->HTTPS)
   Referrer-Policy: strict-origin-when-cross-origin
   
-  # Deshabilita APIs no necesarias
+  # Restringe APIs del navegador a solo las necesarias (niega acceso a cámara, micrófono, etc.)
   Permissions-Policy: camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
   
-  # Fuerza HTTPS por 1 año
+  # Fuerza HTTPS por 1 año con inclusión de subdominios y preload para HSTS
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   
-  # Content Security Policy (CSP) - Configuración para umami + cloudflare rum + api remota
+  # Content Security Policy (CSP): define fuentes permitidas para cada tipo de recurso
+  # - default-src 'self': solo recursos del mismo origen por defecto
+  # - script-src: permite scripts propios, inline/eval (requerido por Next.js), Cloudflare Insights y Umami Analytics
+  # - style-src: permite estilos propios e inline (requerido por Tailwind/Next.js)
+  # - img-src: permite imágenes propias, data: URLs y cualquier fuente HTTPS externa
+  # - font-src: permite fuentes propias y data: URLs
+  # - connect-src: permite fetch/XHR a origen propio, dominios .mgdc.site, Cloudflare y Umami
+  # - frame-ancestors 'none': refuerzo contra clickjacking
+  # - base-uri/form-action 'self': previene inyección de bases o acciones de formulario maliciosas
+  # - object-src 'none': bloquea plugins obsoletos como Flash
+  # - upgrade-insecure-requests: fuerza carga HTTPS de recursos HTTP mixtos
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com https://umami.fluxdv.icu; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss: https://*.mgdc.site https://cloudflareinsights.com https://umami.fluxdv.icu https://static.cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests;
 
-# Cache Headers para Assets Estáticos (JS, CSS)
-# Edge: 30 días | Browser: 1 año (immutable porque tienen hash en el nombre)
+# ─────────────────────────────────────────────────────────────
+# CACHE HEADERS - Estrategias optimizadas por tipo de asset
+# Formato: max-age (browser cache), s-maxage (CDN/Edge cache)
+# ─────────────────────────────────────────────────────────────
+
+# Assets versionados con hash (JS, CSS): Cache agresivo + immutable
 /*.js
   Cache-Control: public, max-age=31536000, s-maxage=2592000, immutable
 
 /*.css
   Cache-Control: public, max-age=31536000, s-maxage=2592000, immutable
 
-# Fuentes Web
-# Edge: 30 días | Browser: 1 año
+# Fuentes Web: Cache largo, immutable si están versionadas
 /*.woff2
   Cache-Control: public, max-age=31536000, s-maxage=2592000, immutable
 
 /*.woff
   Cache-Control: public, max-age=31536000, s-maxage=2592000, immutable
 
-# Imágenes
-# Edge: 7 días | Browser: 1 año
+# Imágenes: Cache largo en browser, cache medio en Edge (7 días) para flexibilidad
 /*.png
   Cache-Control: public, max-age=31536000, s-maxage=604800
 
@@ -57,7 +74,6 @@
 /*.ico
   Cache-Control: public, max-age=31536000, s-maxage=604800
 
-# HTML - Cache corto en edge, revalidación en browser
-# Edge: 1 hora | Browser: revalidar siempre
+# HTML: Cache corto en Edge (1 hora) para permitir despliegues rápidos, revalidación en browser
 /*.html
   Cache-Control: public, max-age=0, s-maxage=3600, must-revalidate

@@ -1,16 +1,24 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
+/**
+ * Metadatos SEO para la página legal de privacidad.
+ */
+export const meta Metadata = {
     title: "Política de Privacidad — mxwatch",
     description: "Política de privacidad y manejo de datos de mxwatch.",
 };
 
+/**
+ * Página estática de Política de Privacidad.
+ * Detalla el compromiso de no-recopilación de PII y el uso ético de analíticas.
+ */
 export default function PrivacyPage() {
     return (
         <article className="max-w-3xl mx-auto px-4 py-20 text-[#8b98b8] leading-relaxed">
             <h1 className="text-3xl font-bold text-[#f0f4ff] mb-2">Política de Privacidad</h1>
             <p className="text-sm text-accent font-medium mb-12 uppercase tracking-widest">Última actualización: 30 de abril de 2026</p>
 
+            {/* Sección 1: Declaración de no recopilación de datos personales */}
             <section className="mb-10">
                 <h2 className="text-xl font-bold text-[#f0f4ff] mb-4">1. Recopilación de Datos</h2>
                 <p>
@@ -18,6 +26,7 @@ export default function PrivacyPage() {
                 </p>
             </section>
 
+            {/* Sección 2: Transparencia sobre herramientas de análisis */}
             <section className="mb-10">
                 <h2 className="text-xl font-bold text-[#f0f4ff] mb-4">2. Analíticas de Uso</h2>
                 <p>
@@ -25,6 +34,7 @@ export default function PrivacyPage() {
                 </p>
             </section>
 
+            {/* Sección 3: Uso de almacenamiento local del navegador */}
             <section className="mb-10">
                 <h2 className="text-xl font-bold text-[#f0f4ff] mb-4">3. Cookies y Almacenamiento Local</h2>
                 <p>
@@ -32,6 +42,7 @@ export default function PrivacyPage() {
                 </p>
             </section>
 
+            {/* Sección 4: Responsabilidad sobre enlaces externos */}
             <section className="mb-10">
                 <h2 className="text-xl font-bold text-[#f0f4ff] mb-4">4. Enlaces a Terceros</h2>
                 <p>
@@ -39,6 +50,7 @@ export default function PrivacyPage() {
                 </p>
             </section>
 
+            {/* Sección 5: Compromiso con la seguridad de la infraestructura */}
             <section className="mb-10">
                 <h2 className="text-xl font-bold text-[#f0f4ff] mb-4">5. Seguridad</h2>
                 <p>

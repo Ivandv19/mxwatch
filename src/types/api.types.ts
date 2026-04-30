@@ -1,39 +1,38 @@
 /**
- * Representa la presencia de cárteles en un estado para la visualización del mapa.
+ * Presencia territorial de cárteles por estado para visualización en mapa.
  */
 export interface LiveStatePresence {
-    stateSlug: string;    // Identificador único (slug) del estado (ej. "sinaloa")
-    stateName: string;    // Nombre amigable del estado (ej. "Sinaloa")
+    stateSlug: string;    // Slug del estado (ej. "sinaloa")
+    stateName: string;    // Nombre legible del estado
     cartels: {
-        id: string;        // ID (UUID) del cártel
-        name: string;      // Nombre oficial del cártel
-        color: string;     // Color hexadecimal asignado para la visualización
-        isDominant: boolean; // Indica si tiene el control principal del territorio
-        slug: string;      // Identificador único del cártel (ej. "cds")
+        id: string;       // UUID del cártel
+        name: string;     // Nombre oficial
+        color: string;    // Hex color para UI
+        isDominant: boolean; // Control territorial principal
+        slug: string;     // Slug del cártel (ej. "cds")
     }[];
 }
 
 /**
- * Detalles extendidos de un cártel para perfiles individuales o inteligencia global.
+ * Perfil detallado de cártel a nivel nacional/global.
  */
 export interface LiveCartelDetails {
     id: string;
     name: string;
     slug: string;
     color: string;
-    globalStatus: string | null;      // Estado operativo actual a nivel nacional
-    foreignDesignation: string | null; // Designación por agencias extranjeras (ej. Treasury/DEA)
-    fifaRiskLevel: string | null;      // Nivel de riesgo asignado para eventos internacionales
-    factions: string[];               // Lista de nombres de facciones activas
-    leaders: { 
-        name: string; 
-        alias: string | null; 
-    }[]; // Estructura de mando principal
+    globalStatus: string | null;      // Estatus operativo nacional
+    foreignDesignation: string | null; // Designación externa (DEA/Treasury)
+    fifaRiskLevel: string | null;      // Nivel de riesgo internacional
+    factions: string[];               // Facciones activas
+    leaders: {
+        name: string;
+        alias: string | null;
+    }[]; // Liderazgo principal
 }
 
 /**
- * Informe de inteligencia detallado por estado.
- * Incluye facciones, líderes y notas tácticas específicas de la región seleccionada.
+ * Informe de inteligencia táctica específico por estado.
  */
 export interface LiveStateIntelligence {
     stateName: string;
@@ -42,16 +41,16 @@ export interface LiveStateIntelligence {
         name: string;
         color: string;
         isDominant: boolean;
-        localIntelligenceNote: string | null; // Nota táctica específica para este estado
+        localIntelligenceNote: string | null; // Nota táctica regional
         globalStatus: string | null;
         foreignDesignation: string | null;
-        factions: { 
-            name: string; 
-            focus: string | null; // Actividad principal de la facción en esta área
+        factions: {
+            name: string;
+            focus: string | null; // Enfoque operativo local
         }[];
-        leaders: { 
-            name: string; 
-            alias: string | null; 
+        leaders: {
+            name: string;
+            alias: string | null;
         }[];
     }[];
 }
