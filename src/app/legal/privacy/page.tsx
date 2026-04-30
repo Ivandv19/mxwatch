@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 /**
  * Metadatos SEO para la página legal de privacidad.
  */
-export const meta Metadata = {
+export const metadata: Metadata = {
     title: "Política de Privacidad — mxwatch",
     description: "Política de privacidad y manejo de datos de mxwatch.",
 };
