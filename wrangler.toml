@@ -4,14 +4,15 @@
 name = "mxwatch"
 
 # Fecha de compatibilidad con las APIs de Cloudflare Workers/Pages.
-# Define el conjunto de runtime features disponibles.
 compatibility_date = "2026-04-30"
 
-# Directorio de salida del build de Next.js que Cloudflare Pages servirá como estáticos.
-# Generado por Vercel/Next.js builder antes del deploy.
+# Habilita la compatibilidad con módulos nativos de Node.js (necesario para Next.js)
+compatibility_flags = [ "nodejs_compat" ]
+
+# Directorio de salida del build de Next.js
 pages_build_output_dir = ".vercel/output/static"
 
-# Variables de entorno públicas
+# Variables de entorno públicas (no secretas)
 [vars]
 NODE_VERSION = "24.14.1"
 BUN_VERSION = "1.3.13"
