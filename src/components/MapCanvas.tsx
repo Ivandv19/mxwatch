@@ -43,6 +43,14 @@ interface ErrorState {
 	data: string | null;
 }
 
+interface TopoData {
+	type: "Topology";
+	arcs: unknown[];
+	objects: {
+		states: unknown;
+	};
+}
+
 interface CartelStyle {
 	fill: string;
 	stroke: string;
@@ -54,8 +62,11 @@ interface CartelStyle {
 
 interface MemoizedMapProps {
 	features: unknown[];
-	position: { coordinates: number[]; zoom: number };
-	handleMoveEnd: (position: { coordinates: number[]; zoom: number }) => void;
+	position: { coordinates: [number, number]; zoom: number };
+	handleMoveEnd: (position: {
+		coordinates: [number, number];
+		zoom: number;
+	}) => void;
 	getCartelStyle: (stateName: string) => CartelStyle;
 	selectedState: string | null;
 	setSelectedState: (state: string | null) => void;
@@ -79,9 +90,7 @@ export default function MapCanvas() {
 		coordinates: MEXICO_CENTER,
 		zoom: DEFAULT_ZOOM,
 	});
-	const [topoData, setTopoData] = useState<Record<string, unknown> | null>(
-		null,
-	);
+	const [topoData, setTopoData] = useState<TopoData | null>(null);
 	const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 	const [errors, setErrors] = useState<ErrorState>({ map: null, data: null });
 	const [isLoading, setIsLoading] = useState({ map: true, data: true });
@@ -249,7 +258,10 @@ export default function MapCanvas() {
 	const features = useMemo(() => {
 		if (!topoData?.objects?.states) return [];
 		try {
-			const result = feature(topoData, topoData.objects.states);
+			const result = feature(
+				topoData as never,
+				topoData.objects.states as never,
+			);
 			return "features" in result
 				? (result as { features: unknown[] }).features
 				: [];

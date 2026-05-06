@@ -17,7 +17,8 @@ const API_BASE = (
 const API_URL = API_BASE.replace(/\/api$/, "");
 
 // Cliente RPC de Hono con autenticación mediante API Key global.
-const client = hc<AppType>(API_URL, {
+// biome-ignore lint/suspicious/noExplicitAny: tipos Hono RPC no resueltos en frontend
+const client: any = hc<AppType>(API_URL, {
 	headers: { "x-api-key": process.env.API_KEY || "" },
 });
 
@@ -48,8 +49,7 @@ async function fetchWithTimeout<T>(
 /** Obtiene la presencia territorial de cárteles por estado para el mapa principal */
 export async function getLiveMapData(): Promise<LiveStatePresence[]> {
 	try {
-		const res = await fetchWithTimeout(client.api.map.$get());
-		if (!res.ok) throw new Error("Failed to fetch map data");
+		const res = await fetchWithTimeout<Response>(client.api.map.$get());
 		const json = await res.json();
 		return json.data as LiveStatePresence[];
 	} catch (error) {
@@ -63,11 +63,9 @@ export async function getCartelDetails(
 	cartelSlug: string,
 ): Promise<LiveCartelDetails | null> {
 	try {
-		const res = await fetchWithTimeout(
+		const res = await fetchWithTimeout<Response>(
 			client.api.cartel[":slug"].$get({ param: { slug: cartelSlug } }),
 		);
-		if (!res.ok)
-			return res.status === 404 ? null : Promise.reject("Fetch failed");
 		const json = await res.json();
 		return json.data as LiveCartelDetails;
 	} catch (error) {
@@ -79,7 +77,7 @@ export async function getCartelDetails(
 /** Obtiene la lista básica de todos los cárteles (nombre, color, slug) para filtros */
 export async function getAllCartelsBasic() {
 	try {
-		const res = await fetchWithTimeout(client.api.cartels.$get());
+		const res = await fetchWithTimeout<Response>(client.api.cartels.$get());
 		if (!res.ok) throw new Error("Failed to fetch cartels");
 		const json = await res.json();
 		return json.data;
@@ -94,7 +92,7 @@ export async function getStateIntelligence(
 	stateName: string,
 ): Promise<LiveStateIntelligence | null> {
 	try {
-		const res = await fetchWithTimeout(
+		const res = await fetchWithTimeout<Response>(
 			client.api.state[":name"].$get({ param: { name: stateName } }),
 		);
 		if (!res.ok)
