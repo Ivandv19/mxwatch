@@ -4,9 +4,9 @@
  */
 
 const config = {
-  plugins: {
-    "@tailwindcss/postcss": {}, // Plugin oficial de Tailwind CSS v4 para PostCSS
-  },
+	plugins: {
+		"@tailwindcss/postcss": {}, // Plugin oficial de Tailwind CSS v4 para PostCSS
+	},
 };
 
 export default config;
