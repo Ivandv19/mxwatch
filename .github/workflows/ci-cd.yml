@@ -102,7 +102,9 @@ jobs:
         run: bun install
 
       - name: Build
-        run: bun run build
+        run: |
+          bun run build
+          bunx next-on-pages
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
           API_KEY: ${{ secrets.API_KEY }}
